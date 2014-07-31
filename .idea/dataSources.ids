@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="dataSourceStorage">
+  <data-source source="LOCAL" name="Rails amazon_seller_central: development" uuid="9fe10ca9-419f-4ed4-9783-605626027bf2">
+    <database-info product="" version="" jdbc-version="" driver-name="" driver-version=""/>
+  </data-source>
+  <data-source source="LOCAL" name="Rails amazon_seller_central: test" uuid="2f3a6567-5e6c-4752-afcd-f5e4408450f3">
+    <database-info product="" version="" jdbc-version="" driver-name="" driver-version=""/>
+  </data-source>
+  <data-source source="LOCAL" name="Rails amazon_seller_central: production" uuid="929ced05-b993-4fb9-96f2-94da288128bb">
+    <database-info product="" version="" jdbc-version="" driver-name="" driver-version=""/>
+  </data-source>
+</component>
