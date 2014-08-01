@@ -2,7 +2,7 @@ class ProductsController < ApplicationController
   respond_to :json
 
   def index
-    @products = Product.all
+    @products = Product.all.order(:prime)
     headers['Access-Control-Allow-Origin'] = '*'
     headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS'
     headers['Access-Control-Allow-Headers'] = 'X-Requested-With, X-Prototype-Version'
