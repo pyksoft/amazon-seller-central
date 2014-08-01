@@ -7,7 +7,7 @@ class AddWishListProducts < ActiveRecord::Migration
           sleep(3)
         end
         p count
-        sleep 2
+        sleep 1
         amazon_item = $req.item_lookup(query: {
             'IdType' => 'ASIN',
             'ItemId' => item_id.chomp,
