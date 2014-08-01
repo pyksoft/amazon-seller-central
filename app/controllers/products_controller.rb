@@ -3,7 +3,9 @@ class ProductsController < ApplicationController
 
   def index
     @products = Product.all
-    # respond_with(@products)
-    render :json => @products
+    headers['Access-Control-Allow-Origin'] = '*'
+    headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS'
+    headers['Access-Control-Allow-Headers'] = 'X-Requested-With, X-Prototype-Version'
+    respond_with(@products)
   end
 end
