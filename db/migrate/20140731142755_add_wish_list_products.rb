@@ -1,31 +1,31 @@
 class AddWishListProducts < ActiveRecord::Migration
   def up
+    p Time.now
     count = 0
     File.open(Dir.pwd + '/config/initializers/files/WishListItemIds.txt', 'r') do |f|
       f.each_line do |item_id|
-        if count % 50 == 0
-          sleep(3)
-        end
         p count
-        sleep 2
-        amazon_item = $req.item_lookup(query: {
-            'IdType' => 'ASIN',
-            'ItemId' => item_id.chomp,
-            'ItemSearch.Shared.ResponseGroup' => 'Large'
-        }).to_h
-        medium_image = amazon_item['ItemLookupResponse']['Items']['Item']['MediumImage']
-        price = amazon_item['ItemLookupResponse']['Items']['Item']['Offers']['Offer']
+        sleep(Random.new.rand(0.3..0.5))
+        amazon_item = Amazon::Ecs.item_lookup(item_id.chomp,
+                                              :response_group => 'ItemAttributes,Images',
+                                              :id_type => 'ASIN',
+                                              'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
+        if amazon_item
+          medium_image = amazon_item.get_element('MediumImage').get('URL')
+          price = amazon_item.get_element('Offers/Offer')
 
 
-        Product.create! item_id: item_id.chomp,
-                        title: amazon_item['ItemLookupResponse']['Items']['Item']['ItemAttributes']['Title'],
-                        image_url: (medium_image ||
-                            [amazon_item['ItemLookupResponse']['Items']['Item']['ImageSets']['ImageSet']].flatten.first['MediumImage'])['URL'],
-                        old_price: price && price['OfferListing']['Price']['Amount'].to_f / 100,
-                        prime: price && amazon_item['ItemLookupResponse']['Items']['Item']['Offers']['Offer']['OfferListing']['IsEligibleForSuperSaverShipping'],
-                        seen: false
+          Product.create! item_id: item_id.chomp,
+                          title: amazon_item.get('ItemAttributes/Title'),
+                          image_url: (medium_image ||
+                              amazon_item.get('ImageSets/ImageSet/MediumImage/URL')),
+                          old_price: price && price.get_element('OfferListing/Price').get('Amount').to_f / 100,
+                          prime: price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping'),
+                          seen: false
+        end
         count += 1
       end
     end
+    p Time.now
   end
 end

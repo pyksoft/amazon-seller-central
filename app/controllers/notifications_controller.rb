@@ -1,4 +1,4 @@
-class ProductsController < ApplicationController
+class NotificationsController < ApplicationController
   respond_to :json
   before_filter :init_headers
 
@@ -9,12 +9,7 @@ class ProductsController < ApplicationController
   end
 
   def index
-    @products = Product.all.order(:prime)
-    respond_with(@products)
-  end
-
-  def compare
-    Product.compare_products
-    redirect_to '/notifications'
+    @notifications = Notification.where('seen IS NULL')
+    respond_with(@notifications)
   end
 end

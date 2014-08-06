@@ -27,26 +27,28 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.1)
       tzinfo (~> 1.1)
+    amazon-ecs (2.2.5)
+      nokogiri (~> 1.4)
+      ruby-hmac (~> 0.3)
     arel (5.0.1.20140414130214)
     builder (3.2.2)
     erubis (2.7.0)
-    excon (0.38.0)
     execjs (2.2.1)
     hike (1.2.3)
     i18n (0.6.11)
     jbuilder (2.1.3)
       activesupport (>= 3.0.0, < 5)
       multi_json (~> 1.2)
-    jeff (1.0.1)
-      excon (>= 0.22.1)
     json (1.8.1)
     mail (2.5.4)
       mime-types (~> 1.16)
       treetop (~> 1.4.8)
     mime-types (1.25.1)
+    mini_portile (0.6.0)
     minitest (5.4.0)
     multi_json (1.10.1)
-    multi_xml (0.5.5)
+    nokogiri (1.6.3.1)
+      mini_portile (= 0.6.0)
     pg (0.17.1)
     polyglot (0.3.5)
     rabl-rails (0.3.4)
@@ -78,6 +80,7 @@ GEM
     rake (10.3.2)
     rdoc (4.1.1)
       json (~> 1.4)
+    ruby-hmac (0.4.0)
     sass (3.2.19)
     sass-rails (4.0.3)
       railties (>= 4.0.0, < 5.0)
@@ -108,14 +111,12 @@ GEM
     uglifier (2.5.3)
       execjs (>= 0.3.0)
       json (>= 1.8.0)
-    vacuum (1.1.1)
-      jeff (~> 1.0)
-      multi_xml (~> 0.5.0)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  amazon-ecs
   jbuilder (~> 2.0)
   pg
   rabl-rails
@@ -125,4 +126,3 @@ DEPENDENCIES
   sdoc (~> 0.4.0)
   spring
   uglifier (>= 1.3.0)
-  vacuum

@@ -1,0 +1,25 @@
+he:
+  activerecord:
+    models:
+      person: 'אדם'
+    attributes:
+      person:
+        email: 'אימייל'
+        first_name: 'שם פרטי'
+        last_name: 'שם משפחה'
+        race_distance: 'מקצה'
+        phone_number: 'מספר טלפון'
+        statement_accepted: 'הצהרת המשתתף'
+        rules_accepted: 'תקנון המירוץ'
+        year: 'שנה'
+        month: 'חודש'
+        day: 'יום'
+        race_id: '%{distance} ק"מ - %{name}'
+        age: 'גיל'
+        birthday: 'תאריך לידה'
+        race: 'מקצה'
+
+
+  notifications:
+    old_price: 'מחיר המוצר- %{item_id} שונה מ %{old_price}$ ל %{new_price}$'
+    prime: 'פריים המוצר- %{item_id} שונה מ %{new_prime} ל %{new_prime}'
