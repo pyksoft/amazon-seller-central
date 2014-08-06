@@ -4,7 +4,7 @@ class Product < ActiveRecord::Base
     begin
       unless checked.size == Product.count
         products.each do |product|
-          sleep(0.2)
+          sleep(2) if checked.size % 5 == 0
           p checked.size if checked.size % 50 == 0
           amazon_item = Amazon::Ecs.item_lookup(product.item_id,
                                                 :response_group => 'ItemAttributes,Images',
