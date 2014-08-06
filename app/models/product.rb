@@ -4,7 +4,6 @@ class Product < ActiveRecord::Base
     begin
       unless checked.size == Product.count
         products.each do |product|
-          sleep(0.8)
           p checked.size if checked.size % 50 == 0
           amazon_item = Amazon::Ecs.item_lookup(product.item_id,
                                                 :response_group => 'ItemAttributes,Images',
@@ -30,6 +29,7 @@ class Product < ActiveRecord::Base
       end
     rescue
       p 'fail'
+      p checked.size
       sleep(8)
       self.compare_products(Product.where("id NOT IN (#{ checked.empty? ? 'null' : checked.join(',')})"), checked, notifications)
     else
