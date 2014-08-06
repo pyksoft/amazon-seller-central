@@ -12,7 +12,7 @@ class Product < ActiveRecord::Base
                                                 'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
           # medium_image = amazon_item.get_element('MediumImage')
           checked << product.id
-          price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
+          price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('SalePrice/Amount').to_f / 100
           prime = price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
 
           diff = product.serializable_attributes.slice(:old_price, :prime).diff({

@@ -4,6 +4,7 @@ class AddWishListProducts < ActiveRecord::Migration
     count = 0
     File.open(Dir.pwd + '/config/initializers/files/WishListItemIds.txt', 'r') do |f|
       f.each_line do |item_id|
+        p count if count.size % 50 == 0
         sleep(4) if count % 4 == 0
         amazon_item = Amazon::Ecs.item_lookup(item_id.chomp,
                                               :response_group => 'ItemAttributes,Images',
@@ -18,7 +19,7 @@ class AddWishListProducts < ActiveRecord::Migration
                           title: amazon_item.get('ItemAttributes/Title'),
                           image_url: (medium_image ||
                               amazon_item.get('ImageSets/ImageSet/MediumImage/URL')),
-                          old_price: price && price.get_element('OfferListing/Price').get('Amount').to_f / 100,
+                          old_price: price && price.get_element('OfferListing').get('SalePrice/Amount').to_f / 100,
                           prime: price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping'),
                           seen: false
         end
