@@ -4,8 +4,7 @@ class AddWishListProducts < ActiveRecord::Migration
     count = 0
     File.open(Dir.pwd + '/config/initializers/files/WishListItemIds.txt', 'r') do |f|
       f.each_line do |item_id|
-        p count
-        sleep(Random.new.rand(0.3..0.5))
+        sleep(4) if count % 4 == 0
         amazon_item = Amazon::Ecs.item_lookup(item_id.chomp,
                                               :response_group => 'ItemAttributes,Images',
                                               :id_type => 'ASIN',
