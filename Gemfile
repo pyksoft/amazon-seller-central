@@ -18,6 +18,7 @@ gem 'sdoc', '~> 0.4.0',        group: :doc
 gem 'spring',      group: :development
 
 gem 'amazon-ecs'
+gem 'ebayr', '~> 0.0.7'
 
 gem 'rabl-rails'
 gem 'rails_12factor', group: :production
