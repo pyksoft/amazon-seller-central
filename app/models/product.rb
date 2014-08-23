@@ -33,8 +33,8 @@ class Product < ActiveRecord::Base
               {
                   :old_price => {
                       :attrs => [:amazon_old_price, :amazon_new_price],
-                      :extra_attrs => proc do |ebay_price, attrs|
-                        attrs.merge!(:ebay_old_price => ebay_price, :ebay_new_price => attrs[:amazon_old_price])
+                      :extra_attrs => proc do |ebay_old_price,ebay_new_price, attrs|
+                        attrs.merge!(:ebay_old_price => ebay_old_price, :ebay_new_price => ebay_new_price)
                       end
                   },
                   :prime => {
@@ -43,23 +43,25 @@ class Product < ActiveRecord::Base
               }
           )
 
-          # update amazon old_price & prime
-          # update_attributes :old_price => price, :prime => prime
-
           p diff
           diff.each_pair do |sym, details|
             price_change = details.inject { |a, b| a - b }
             p price_change
             n_attrs =Hash[syms[sym][:attrs].zip(details)].merge(:title => product.title)
-            ebay_price = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)[:item][:buy_it_now_price]
+            ebay_price = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)[:item][:converted_start_price]
             p ebay_price
-            syms[sym][:extra_attrs].call(ebay_price, n_attrs) if syms[sym][:extra_attrs]
+            p ebay_price + price_change
+            syms[sym][:extra_attrs].call(ebay_price,ebay_price + price_change, n_attrs) if syms[sym][:extra_attrs]
             p({ :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
                 :product => product })
             notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
                               :product => product }
             Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :BuyItNowPrice => ebay_price + price_change }, :auth_token => Ebayr.auth_token)
           end
+
+          update amazon old_price & prime
+          update_attributes :old_price => price, :prime => prime
+
         end
       end
     rescue
