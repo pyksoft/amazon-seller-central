@@ -20,10 +20,12 @@ class ProductsController < ApplicationController
   end
 
   def create_product
-    p '========='
+    p '================='
+    p '================='
     p JSON.parse(params)
-    p '========='
+    p '================='
+    p '================='
     response = Product.new(JSON.parse(params).slice(:amazon_asin_number, :ebay_item_id)).create_with_requests
-    response[:errs] ? render({:json 2=> (response[:errs])}) : redirect_to('/notifications')
+    response[:errs] ? render({:json => (response[:errs])}) : redirect_to('/notifications')
   end
 end
