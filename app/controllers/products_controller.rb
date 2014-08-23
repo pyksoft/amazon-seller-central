@@ -20,7 +20,9 @@ class ProductsController < ApplicationController
   end
 
   def create_product
+    p params
     params.permit!
+    p params[:amazon_asin_number]
     p '================='
     p '================='
     p JSON.parse(params)
