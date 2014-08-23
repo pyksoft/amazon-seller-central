@@ -20,9 +20,10 @@ class ProductsController < ApplicationController
   end
 
   def create_product
+    params.permit!
     p '================='
     p '================='
-    p JSON.parse(params.permit(:amazon_asin_number, :ebay_item_id))
+    p JSON.parse(params)
     p '================='
     p '================='
     response = Product.new(JSON.parse(params.permit(:amazon_asin_number, :ebay_item_id)).slice(:amazon_asin_number, :ebay_item_id)).create_with_requests
