@@ -15,7 +15,7 @@ class Product < ActiveRecord::Base
     begin
       unless checked.size == Product.count
         products.each do |product|
-          sleep(2) if checked.size % 5 == 0
+          sleep(1) if checked.size % 3 == 0
           p checked.size if checked.size % 10 == 0
           amazon_item = Amazon::Ecs.item_lookup(product.amazon_asin_number,
                                                 :response_group => 'ItemAttributes,Images',
@@ -67,7 +67,7 @@ class Product < ActiveRecord::Base
       @@thread_compare_working = false
       UserMailer.send_email('',
                             I18n.t('notifications.compare_complete',
-                                   :compare_time => I18n.l(Time.now,:format => :long),
+                                   :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'),:format => :long),
                                    :new_notifications_count => notifications.count),
                             'roiekoper@gmail.com').deliver
       notifications.each { |notification| Notification.create! notification }
