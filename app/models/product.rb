@@ -53,7 +53,7 @@ class Product < ActiveRecord::Base
             syms[sym][:extra_attrs].call(ebay_price, n_attrs) if syms[sym][:extra_attrs]
             notifications <<{ :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
                               :product => product }
-            # Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :BuyItNowPrice => ebay_price + price_change }, :auth_token => Ebayr.auth_token)
+            Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :BuyItNowPrice => ebay_price + price_change }, :auth_token => Ebayr.auth_token)
           end
         end
       end
