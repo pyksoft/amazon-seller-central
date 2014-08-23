@@ -11,6 +11,7 @@ class Product < ActiveRecord::Base
 
   def self.compare_products(products = Product.all, checked = [], notifications = [])
     @@thread_compare_working = true
+    Notification.where('seen is null OR seen = false').update_all(:seen => true)
 
     begin
       unless checked.size == Product.count
