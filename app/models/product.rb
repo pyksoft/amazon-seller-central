@@ -48,14 +48,12 @@ class Product < ActiveRecord::Base
 
           diff.each_pair do |sym, details|
             price_change = details.inject { |a, b| a - b }
-            if sym != 'old_price' || price_change.abs > 5
-              n_attrs =Hash[syms[sym][:attrs].zip(details)].merge(:title => product.title)
-              ebay_price = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)[:item][:buy_it_now_price]
-              syms[sym][:extra_attrs].call(ebay_price, n_attrs) if syms[sym][:extra_attrs]
-              notifications <<{ :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
-                                :product => product }
-              # Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :BuyItNowPrice => ebay_price + price_change }, :auth_token => Ebayr.auth_token)
-            end
+            n_attrs =Hash[syms[sym][:attrs].zip(details)].merge(:title => product.title)
+            ebay_price = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)[:item][:buy_it_now_price]
+            syms[sym][:extra_attrs].call(ebay_price, n_attrs) if syms[sym][:extra_attrs]
+            notifications <<{ :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
+                              :product => product }
+            # Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :BuyItNowPrice => ebay_price + price_change }, :auth_token => Ebayr.auth_token)
           end
         end
       end
