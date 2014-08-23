@@ -86,10 +86,12 @@ class Product < ActiveRecord::Base
   end
 
   def create_with_requests
+    p amazon_asin_number
     amazon_item = Amazon::Ecs.item_lookup(amazon_asin_number,
                                           :response_group => 'ItemAttributes,Images',
                                           :id_type => 'ASIN',
                                           'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
+    p amazon_item
     if amazon_item
       self.old_price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
       self.prime = old_price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
