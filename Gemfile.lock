@@ -118,6 +118,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  actionmailer
   amazon-ecs
   ebayr (~> 0.0.7)
   jbuilder (~> 2.0)

@@ -65,6 +65,11 @@ class Product < ActiveRecord::Base
       p Time.now
       p 'finished!'
       @@thread_compare_working = false
+      UserMailer.send_email('',
+                            I18n.t('notifications.compare_complete',
+                                   :compare_time => I18n.l(Time.now,:format => :long),
+                                   :new_notifications_count => notifications.count),
+                            'roiekoper@gmail.com').deliver
       notifications.each { |notification| Notification.create! notification }
     end
   end
