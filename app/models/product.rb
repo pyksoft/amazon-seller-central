@@ -68,14 +68,15 @@ class Product < ActiveRecord::Base
       p 'finished!'
       @@thread_compare_working = false
 
-      %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
-        UserMailer.send_email('',
-                              I18n.t('notifications.compare_complete',
-                                     :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'),:format => :long),
-                                     :new_notifications_count => notifications.count),
-                              to).deliver
-      end
+      # %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
+      #   UserMailer.send_email('',
+      #                         I18n.t('notifications.compare_complete',
+      #                                :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'),:format => :long),
+      #                                :new_notifications_count => notifications.count),
+      #                         to).deliver
+      # end
 
+      p notifications
       notifications.each { |notification| Notification.create! notification }
     end
   end
