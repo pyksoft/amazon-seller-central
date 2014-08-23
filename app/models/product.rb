@@ -44,7 +44,7 @@ class Product < ActiveRecord::Base
           )
 
           # update amazon old_price & prime
-          update_attributes :old_price => price, :prime => prime
+          # update_attributes :old_price => price, :prime => prime
 
           p diff
           diff.each_pair do |sym, details|
