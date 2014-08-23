@@ -48,6 +48,7 @@ class Product < ActiveRecord::Base
             n_attrs = Hash[syms[sym][:attrs].zip(details)].merge(:title => product.title)
             ebay_price = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)[:item][:listing_details][:converted_start_price]
             syms[sym][:extra_attrs].call(ebay_price,ebay_price.to_f + price_change, n_attrs) if syms[sym][:extra_attrs]
+            p n_attrs
             notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
                               :product => product }
             Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :BuyItNowPrice => ebay_price.to_f + price_change }, :auth_token => Ebayr.auth_token)
