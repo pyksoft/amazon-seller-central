@@ -44,7 +44,7 @@ class Product < ActiveRecord::Base
           )
 
           diff.each_pair do |sym, details|
-            price_change = details.inject { |a, b| a - b }
+            price_change = details.inject { |a, b| b - a } # new price - old price
             n_attrs = Hash[syms[sym][:attrs].zip(details)].merge(:title => product.title)
             ebay_price = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)[:item][:listing_details][:converted_start_price]
             syms[sym][:extra_attrs].call(ebay_price,ebay_price.to_f + price_change, n_attrs) if syms[sym][:extra_attrs]
