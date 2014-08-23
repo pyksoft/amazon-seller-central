@@ -56,5 +56,6 @@ Rails.application.routes.draw do
 
   get 'products/compare' => 'products#compare', :defaults => { :format => 'json' }
   resources :products, :only => [:index], :defaults => { :format => 'json' }
+  post 'products/create_product' => 'products#create_product'
   resources :notifications, :only => [:index], :defaults => { :format => 'json' }
 end

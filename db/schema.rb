@@ -21,10 +21,12 @@ ActiveRecord::Schema.define(version: 20140802131309) do
     t.integer  "product_id"
     t.datetime "created_at"
     t.boolean  "seen"
+    t.string   "icon"
   end
 
   create_table "products", force: true do |t|
-    t.string   "item_id"
+    t.string   "ebay_item_id"
+    t.string   "amazon_asin_number"
     t.text     "title"
     t.text     "image_url"
     t.float    "old_price"

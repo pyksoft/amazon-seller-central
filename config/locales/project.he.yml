@@ -19,7 +19,11 @@ he:
         birthday: 'תאריך לידה'
         race: 'מקצה'
 
+  errors:
+    product: 'המוצר אינו נוצר, ה Amazon Asin Number לא תקין'
 
   notifications:
-    old_price: 'מחיר המוצר- %{item_id} שונה מ %{old_price}$ ל %{new_price}$'
-    prime: 'פריים המוצר- %{item_id} שונה מ %{new_prime} ל %{new_prime}'
+    old_price: '<b>Ebay</b> - מחיר חדש  %{ebay_old_price}$ , מחיר ישן %{ebay_new_price}$<br>
+    <b>Amazon</b> - מחיר חדש  %{amazon_old_price}$ , מחיר ישן %{amazon_new_price}$'
+    prime: '<b>המוצר %{title}</b><br>
+    שונה לפריים %{new_prime} מ %{old_prime}'
