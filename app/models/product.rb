@@ -56,7 +56,7 @@ class Product < ActiveRecord::Base
                               :product => product }
             p '======== Update Ebay =========='
             p "======#{product.ebay_item_id}=====#{ebay_price.to_f + price_change}======"
-            Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :StartPrice => ebay_price.to_f + price_change }, :auth_token => Ebayr.auth_token)
+            Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :StartPrice => "#{ebay_price.to_f + price_change}" }, :auth_token => Ebayr.auth_token)
           end
 
           # update amazon old_price & prime
