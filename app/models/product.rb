@@ -55,7 +55,7 @@ class Product < ActiveRecord::Base
             notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
                               :product => product }
             p '======== Update Ebay =========='
-            Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :BuyItNowPrice => ebay_price.to_f + price_change }, :auth_token => Ebayr.auth_token)
+            Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :StartPrice => ebay_price.to_f + price_change }, :auth_token => Ebayr.auth_token)
           end
 
           # update amazon old_price & prime
