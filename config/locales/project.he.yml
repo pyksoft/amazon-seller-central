@@ -1,26 +1,27 @@
 he:
   activerecord:
     models:
-      person: 'אדם'
+      product: 'מוצר'
     attributes:
-      person:
-        email: 'אימייל'
-        first_name: 'שם פרטי'
-        last_name: 'שם משפחה'
-        race_distance: 'מקצה'
-        phone_number: 'מספר טלפון'
-        statement_accepted: 'הצהרת המשתתף'
-        rules_accepted: 'תקנון המירוץ'
-        year: 'שנה'
-        month: 'חודש'
-        day: 'יום'
-        race_id: '%{distance} ק"מ - %{name}'
-        age: 'גיל'
-        birthday: 'תאריך לידה'
-        race: 'מקצה'
+      product:
+        ebay_item_id: 'מספר המוצר באיביי'
+        amazon_asin_number: 'מספר האסין באמזון'
+
+    errors:
+      models:
+        product:
+          attributes:
+            ebay_item_id:
+              unknown: 'שהזנת אינו תואם מוצר שברשותך'
+            amazon_asin_number:
+              unknown: 'שהזנת אינו תואם מוצר שברשותך'
+              not_prime: 'שהזנת אינו פריים'
 
   errors:
     product: 'המוצר אינו נוצר, ה Amazon Asin Number לא תקין'
+
+  messages:
+    product_create: 'המוצר נוצר בהצלחה!'
 
   notifications:
     compare_complete: '%{compare_time} השוואת המוצרים הסתיימה, ישנם %{new_notifications_count} הודעות חדשות'

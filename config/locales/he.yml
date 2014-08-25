@@ -101,7 +101,7 @@ he:
     format: ! '%{attribute} %{message}'
     messages:
       accepted: '%{attribute} חייב באישור'
-      blank: '%{attribute} לא יכול להיות ריק'
+      blank: 'לא יכול להיות ריק'
       confirmation: לא תואם לאישורו
       empty: לא יכול להיות ריק
       equal_to: חייב להיות שווה ל- %{count}
