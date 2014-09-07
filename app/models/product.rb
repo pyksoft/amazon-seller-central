@@ -67,7 +67,7 @@ class Product < ActiveRecord::Base
                   :old_price => {
                       :attrs => [:amazon_old_price, :amazon_new_price],
                       :extra_attrs => proc do |ebay_old_price, ebay_new_price, attrs|
-                        attrs.merge!(:ebay_old_price => ebay_old_price, :ebay_new_price => ebay_new_price)
+                        attrs.merge!(:ebay_old_price => ebay_old_price.round(2), :ebay_new_price => ebay_new_price.round(2))
                       end
                   },
                   :prime => {
@@ -122,6 +122,7 @@ class Product < ActiveRecord::Base
       self.old_price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
       self.prime = old_price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
       self.image_url = amazon_item.get_element('MediumImage').get('URL')
+      self.title = amazon_item.get('ItemAttributes/Title')
       save!
       {:msg => I18n.t('messages.product_create')}
     else
