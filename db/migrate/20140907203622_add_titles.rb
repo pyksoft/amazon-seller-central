@@ -1,8 +1,7 @@
 class AddTitles < ActiveRecord::Migration
   def change
-    Product.all.each_with_index do |product,i|
-      sleep 0.5
-      p i
+    Product.all.each do |product|
+      sleep 1
       amazon_item = Amazon::Ecs.item_lookup(product.amazon_asin_number,
                                             :response_group => 'ItemAttributes,Images',
                                             :id_type => 'ASIN',
