@@ -13,6 +13,7 @@ he:
           attributes:
             ebay_item_id:
               unknown: 'שהזנת אינו תואם מוצר שברשותך'
+              ending: 'המוצר שהזנת אינו במלאי'
             amazon_asin_number:
               unknown: 'שהזנת אינו תואם מוצר שברשותך'
               not_prime: 'שהזנת אינו פריים'
@@ -29,3 +30,5 @@ he:
                <b>Ebay</b> -  מחיר ישן %{ebay_old_price}$,  מחיר חדש  %{ebay_new_price}$'
     prime: '<b>המוצר %{title}</b><br>
     שונה לפריים %{new_prime} מ %{old_prime}'
+    ending: '<b>המוצר %{title}</b><br>
+                אינו זמין יותר במלאי'

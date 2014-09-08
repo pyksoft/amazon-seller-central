@@ -1,13 +1,21 @@
 class Product < ActiveRecord::Base
   validates_uniqueness_of :ebay_item_id, :amazon_asin_number
   validates_presence_of :ebay_item_id, :amazon_asin_number
-  validate :ebay_item_id_validation, :amazon_asin_number_validation, :prime_validation
+  validate :ebay_item_validation, :amazon_asin_number_validation
+  validate :prime_validation, :on => :create
 
   @@thread_compare_working = false
 
-  def ebay_item_id_validation
-    if Ebayr.call(:GetItem, :ItemID => ebay_item_id, :auth_token => Ebayr.auth_token)[:ack] == 'Failure'
+  def self.ending?(ebay_item)
+    ebay_item[:item][:listing_details][:ending_reason]
+  end
+
+  def ebay_item_validation
+    ebay_item = Ebayr.call(:GetItem, :ItemID => ebay_item_id, :auth_token => Ebayr.auth_token)
+    if ebay_item[:ack] == 'Failure'
       errors.add(:ebay_item_id, :unknown)
+    elsif self.class.ending?(ebay_item)
+      errors.add(:ebay_item_id, :ending)
     end
   end
 
@@ -49,46 +57,57 @@ class Product < ActiveRecord::Base
       unless checked.size == Product.count
         products.each do |product|
           sleep(1) if checked.size % 3 == 0
-          p checked.size if checked.size % 10 == 0
           amazon_item = Amazon::Ecs.item_lookup(product.amazon_asin_number,
                                                 :response_group => 'ItemAttributes,Images',
                                                 :id_type => 'ASIN',
                                                 'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
+          ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
           checked << product.id
           price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
           prime = price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
 
-          diff = product.serializable_attributes.slice(:old_price, :prime).diff({
-                                                                                    'old_price' => price,
-                                                                                    'prime' => prime
-                                                                                })
-          syms = HashWithIndifferentAccess.new(
-              {
-                  :old_price => {
-                      :attrs => [:amazon_old_price, :amazon_new_price],
-                      :extra_attrs => proc do |ebay_old_price, ebay_new_price, attrs|
-                        attrs.merge!(:ebay_old_price => ebay_old_price.to_f.round(2), :ebay_new_price => ebay_new_price.to_f.round(2))
-                      end
-                  },
-                  :prime => {
-                      :attrs => [:old_prime, :new_prime]
-                  }
-              }
-          )
-
-          diff.each_pair do |sym, details|
-            price_change = details.inject { |a, b| b - a } # new price - old price
-            n_attrs = Hash[syms[sym][:attrs].zip(details)].merge(:title => product.title)
-            ebay_price = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)[:item][:listing_details][:converted_start_price]
-            syms[sym][:extra_attrs].call(ebay_price, ebay_price.to_f + price_change, n_attrs) if syms[sym][:extra_attrs]
-            notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
+          if ending?(ebay_item)
+            notifications << { :text => I18n.t('notifications.ending', :title => product.title),
                                :product => product }
-            Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :StartPrice => "#{ebay_price.to_f + price_change}" }, :auth_token => Ebayr.auth_token)
+            product.destroy!
+          else
+            diff = product.serializable_attributes.slice(:old_price, :prime).diff({
+                                                                                      'old_price' => price,
+                                                                                      'prime' => prime
+                                                                                  })
+            syms = HashWithIndifferentAccess.new(
+                {
+                    :old_price => {
+                        :attrs => [:amazon_old_price, :amazon_new_price],
+                        :extra_attrs => proc do |ebay_old_price, ebay_new_price, attrs|
+                          attrs.merge!(:ebay_old_price => ebay_old_price.to_f.round(2), :ebay_new_price => ebay_new_price.to_f.round(2))
+                        end,
+                        :var => price
+                    },
+                    :prime => {
+                        :attrs => [:old_prime, :new_prime],
+                        :var => prime
+                    }
+                }
+            )
+
+            diff.each_pair do |sym, details|
+              n_attrs = Hash[syms[sym][:attrs].zip(details)].merge(:title => product.title)
+
+              if sym.to_sym == :old_price
+                price_change = details.inject { |a, b| b - a } # new price - old price
+                ebay_price = ebay_item[:item][:listing_details][:converted_start_price]
+                syms[sym][:extra_attrs].call(ebay_price, ebay_price.to_f + price_change, n_attrs) if syms[sym][:extra_attrs]
+                Ebayr.call(:ReviseItem, :item => { :ItemID => product.ebay_item_id, :StartPrice => "#{ebay_price.to_f + price_change}" }, :auth_token => Ebayr.auth_token)
+              end
+
+              notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
+                                 :product => product }
+            end
+
+            # update amazon old_price & prime
+            product.update_attributes! syms.slice(*diff.keys).inject({}){|h,(k,v)| h.merge(k => v['var'])}
           end
-
-          # update amazon old_price & prime
-          product.update_attributes :old_price => price, :prime => prime
-
         end
       end
     rescue
@@ -108,7 +127,6 @@ class Product < ActiveRecord::Base
                               to).deliver
       end
 
-      p notifications
       notifications.each { |notification| Notification.create! notification }
     end
   end
