@@ -67,7 +67,8 @@ class Product < ActiveRecord::Base
                   :old_price => {
                       :attrs => [:amazon_old_price, :amazon_new_price],
                       :extra_attrs => proc do |ebay_old_price, ebay_new_price, attrs|
-                        attrs.merge!(:ebay_old_price => ebay_old_price.round(2), :ebay_new_price => ebay_new_price.round(2))
+                        p ebay_old_price,ebay_new_price
+                        attrs.merge!(:ebay_old_price => ebay_old_price.to_f.round(2), :ebay_new_price => ebay_new_price.to_f.round(2))
                       end
                   },
                   :prime => {
