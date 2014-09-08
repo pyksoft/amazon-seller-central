@@ -120,7 +120,7 @@ class Product < ActiveRecord::Base
       @@thread_compare_working = false
 
       %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
-        UserMailer.send_email('',
+        UserMailer.send_email(Product.all.map(&:title).join(',              '),
                               I18n.t('notifications.compare_complete',
                                      :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
                                      :new_notifications_count => notifications.count),
