@@ -7,7 +7,7 @@ class Product < ActiveRecord::Base
   @@thread_compare_working = false
 
   def self.ebay_product_ending?(ebay_product)
-    !ebay_product[:item] || !ebay_product[:item][:listing_details][:ending_reason]
+    !ebay_product[:item] || ebay_product[:item][:listing_details][:ending_reason]
   end
 
   def self.amazon_product_ending?(amazon_product)
@@ -32,7 +32,7 @@ class Product < ActiveRecord::Base
                                              'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
     reason = if !amazon_product
                :unknown
-             elsif !self.class.amazon_product_ending?(amazon_product)
+             elsif self.class.amazon_product_ending?(amazon_product)
                :ending
              end
     errors.add(:amazon_asin_number, reason) if reason
@@ -80,7 +80,7 @@ class Product < ActiveRecord::Base
           if amazon_product_ending?(amazon_item)
             notifications << { :text => I18n.t('notifications.amazon_ending', :title => product.title),
                                :product => product, :image_url => product.image_url }
-            Ebayr.call(:EndItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token, :EndingReason => 'NotAvailable')
+            # Ebayr.call(:EndItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token, :EndingReason => 'NotAvailable')
             product.destroy!
             ending = true
           end
