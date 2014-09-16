@@ -6,26 +6,36 @@ class Product < ActiveRecord::Base
 
   @@thread_compare_working = false
 
-  def self.ending?(ebay_item)
-    ebay_item[:item][:listing_details][:ending_reason]
+  def self.ebay_product_ending?(ebay_product)
+    !ebay_product[:item] || !ebay_product[:item][:listing_details][:ending_reason]
+  end
+
+  def self.amazon_product_ending?(amazon_product)
+    !amazon_product.get_hash['Offers'].match('AvailabilityType') ||
+        amazon_product.get_hash['Offers'].string_between_markers('AvailabilityType', 'AvailabilityType').delete('></') != 'now'
   end
 
   def ebay_item_validation
-    ebay_item = Ebayr.call(:GetItem, :ItemID => ebay_item_id, :auth_token => Ebayr.auth_token)
-    if ebay_item[:ack] == 'Failure'
-      errors.add(:ebay_item_id, :unknown)
-    elsif self.class.ending?(ebay_item)
-      errors.add(:ebay_item_id, :ending)
-    end
+    ebay_product = Ebayr.call(:GetItem, :ItemID => ebay_item_id, :auth_token => Ebayr.auth_token)
+    reason = if ebay_product[:ack] == 'Failure'
+               :unknown
+             elsif self.class.ebay_product_ending?(ebay_product)
+               :ending
+             end
+    errors.add(:ebay_item_id, reason) if reason
   end
 
   def amazon_asin_number_validation
-    unless Amazon::Ecs.item_lookup(amazon_asin_number,
-                                   :response_group => 'ItemAttributes,Images',
-                                   :id_type => 'ASIN',
-                                   'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
-      errors.add(:amazon_asin_number, :unknown)
-    end
+    amazon_product = Amazon::Ecs.item_lookup(amazon_asin_number,
+                                             :response_group => 'ItemAttributes,Images',
+                                             :id_type => 'ASIN',
+                                             'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
+    reason = if !amazon_product
+               :unknown
+             elsif !self.class.amazon_product_ending?(amazon_product)
+               :ending
+             end
+    errors.add(:amazon_asin_number, reason) if reason
   end
 
   def prime_validation
@@ -56,6 +66,7 @@ class Product < ActiveRecord::Base
     begin
       unless checked.size == Product.count
         products.each do |product|
+          ending = false
           sleep(1) if checked.size % 3 == 0
           amazon_item = Amazon::Ecs.item_lookup(product.amazon_asin_number,
                                                 :response_group => 'ItemAttributes,Images',
@@ -66,18 +77,29 @@ class Product < ActiveRecord::Base
           price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
           prime = price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
 
-          if ending?(ebay_item)
-            notifications << { :text => I18n.t('notifications.ending', :title => product.title),
-                               :product => product }
+          if amazon_product_ending?(amazon_item)
+            notifications << { :text => I18n.t('notifications.amazon_ending', :title => product.title),
+                               :product => product, :image_url => product.image_url }
+            Ebayr.call(:EndItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token, :EndingReason => 'NotAvailable')
             product.destroy!
-          else
-            diff = product.serializable_attributes.slice(:old_price, :prime).diff({
-                                                                                      'old_price' => price,
-                                                                                      'prime' => prime
-                                                                                  })
+            ending = true
+          end
+
+          if ebay_product_ending?(ebay_item) && !ending
+            notifications << { :text => I18n.t('notifications.ebay_ending', :title => product.title),
+                               :product => product, :image_url => product.image_url }
+            ending = true
+            product.destroy!
+          end
+
+          unless ending
+            diff = product.serializable_attributes.slice(:amazon_price, :prime).diff({
+                                                                                         'amazon_price' => 30.0,
+                                                                                         'prime' => prime
+                                                                                     })
             syms = HashWithIndifferentAccess.new(
                 {
-                    :old_price => {
+                    :amazon_price => {
                         :attrs => [:amazon_old_price, :amazon_new_price],
                         :extra_attrs => proc do |ebay_old_price, ebay_new_price, attrs|
                           attrs.merge!(:ebay_old_price => ebay_old_price.to_f.round(2), :ebay_new_price => ebay_new_price.to_f.round(2))
@@ -93,8 +115,7 @@ class Product < ActiveRecord::Base
 
             diff.each_pair do |sym, details|
               n_attrs = Hash[syms[sym][:attrs].zip(details)].merge(:title => product.title)
-
-              if sym.to_sym == :old_price
+              if sym.to_sym == :amazon_price
                 price_change = details.inject { |a, b| b - a } # new price - old price
                 ebay_price = ebay_item[:item][:listing_details][:converted_start_price]
                 syms[sym][:extra_attrs].call(ebay_price, ebay_price.to_f + price_change, n_attrs) if syms[sym][:extra_attrs]
@@ -102,11 +123,11 @@ class Product < ActiveRecord::Base
               end
 
               notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => product.title)),
-                                 :product => product }
+                                 :product => product, :image_url => product.image_url }
             end
 
             # update amazon old_price & prime
-            product.update_attributes! syms.slice(*diff.keys).inject({}){|h,(k,v)| h.merge(k => v['var'])}
+            product.update_attributes! syms.slice(*diff.keys).inject({}) { |h, (k, v)| h.merge(k => v['var']) }
           end
         end
       end
@@ -137,14 +158,14 @@ class Product < ActiveRecord::Base
                                           :id_type => 'ASIN',
                                           'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
     if valid?
-      self.old_price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
-      self.prime = old_price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
+      self.amazon_price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
+      self.prime = amazon_price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
       self.image_url = amazon_item.get_element('MediumImage').get('URL')
       self.title = amazon_item.get('ItemAttributes/Title')
       save!
-      {:msg => I18n.t('messages.product_create')}
+      { :msg => I18n.t('messages.product_create') }
     else
-      {:errs => errors.full_messages}
+      { :errs => errors.full_messages }
     end
   end
 end

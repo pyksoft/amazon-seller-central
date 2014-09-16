@@ -5,7 +5,7 @@ class CreateNotifications < ActiveRecord::Migration
       t.references :product
       t.datetime :created_at
       t.boolean :seen
-      t.string :icon
+      t.string :icon,:title
     end
   end
 end

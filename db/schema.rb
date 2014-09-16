@@ -11,10 +11,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140908195531) do
+ActiveRecord::Schema.define(version: 20140914191311) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "lists", force: true do |t|
+    t.string "kind"
+    t.string "title"
+  end
 
   create_table "notifications", force: true do |t|
     t.text     "text"
@@ -22,6 +27,8 @@ ActiveRecord::Schema.define(version: 20140908195531) do
     t.datetime "created_at"
     t.boolean  "seen"
     t.string   "icon"
+    t.string   "image_url"
+    t.integer  "list_id"
   end
 
   create_table "products", force: true do |t|
@@ -29,10 +36,8 @@ ActiveRecord::Schema.define(version: 20140908195531) do
     t.string   "amazon_asin_number"
     t.text     "title"
     t.text     "image_url"
-    t.float    "old_price"
-    t.float    "new_price"
+    t.float    "amazon_price"
     t.boolean  "prime"
-    t.boolean  "seen"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
