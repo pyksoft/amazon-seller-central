@@ -94,7 +94,7 @@ class Product < ActiveRecord::Base
 
           unless ending
             diff = product.serializable_attributes.slice(:amazon_price, :prime).diff({
-                                                                                         'amazon_price' => 30.0,
+                                                                                         'amazon_price' => price,
                                                                                          'prime' => prime
                                                                                      })
             syms = HashWithIndifferentAccess.new(
