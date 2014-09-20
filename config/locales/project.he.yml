@@ -13,11 +13,11 @@ he:
           attributes:
             ebay_item_id:
               unknown: 'שהזנת אינו תואם מוצר שברשותך'
-              ending: 'המוצר שהזנת אינו במלאי'
+              ending: 'שהזנת אינו במלאי'
             amazon_asin_number:
               unknown: 'שהזנת אינו תואם מוצר שברשותך'
               not_prime: 'שהזנת אינו פריים'
-              ending: 'המוצר שהזנת אינו במלאי'
+              ending: 'שהזנת אינו במלאי'
 
   errors:
     product: 'המוצר אינו נוצר, ה Amazon Asin Number לא תקין'
