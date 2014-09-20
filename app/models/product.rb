@@ -103,7 +103,7 @@ class Product < ActiveRecord::Base
       p 'finished!'
       @@thread_compare_working = false
 
-      %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
+      %w(roiekoper@gmail.com).each do |to|
         UserMailer.send_email(Product.all.map(&:title).join(',              '),
                               I18n.t('notifications.compare_complete',
                                      :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
@@ -116,6 +116,7 @@ class Product < ActiveRecord::Base
   end
 
   def create_with_requests
+    p valid?
     if valid?
       amazon_item = Amazon::Ecs.item_lookup(amazon_asin_number,
                                             :response_group => 'ItemAttributes,Images',
@@ -130,63 +131,63 @@ class Product < ActiveRecord::Base
     else
       { :errs => errors.full_messages }
     end
+  end
 
-    def find_diff(amazon_item, ebay_item, notifications = [])
-      price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
-      prime = price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
+  def find_diff(amazon_item, ebay_item, notifications = [])
+    price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
+    prime = price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
 
-      if valid? && price && prime
-        syms = HashWithIndifferentAccess.new(
-            {
-                :amazon_price => {
-                    :attrs => [:amazon_old_price, :amazon_new_price],
-                    :extra_attrs => proc do |ebay_old_price, ebay_new_price, attrs|
-                      attrs.merge!(:ebay_old_price => ebay_old_price.to_f.round(2), :ebay_new_price => ebay_new_price.to_f.round(2))
-                    end,
-                    :var => price
-                },
-                :prime => {
-                    :attrs => [:old_prime, :new_prime],
-                    :var => prime,
-                    :translate_vals => proc { |vals| p vals; vals.map { |val| p '*****', val.to_s; I18n.t(val.to_s, :scope => :app) } }
-                }
-            }
-        )
+    if valid? && price && prime
+      syms = HashWithIndifferentAccess.new(
+          {
+              :amazon_price => {
+                  :attrs => [:amazon_old_price, :amazon_new_price],
+                  :extra_attrs => proc do |ebay_old_price, ebay_new_price, attrs|
+                    attrs.merge!(:ebay_old_price => ebay_old_price.to_f.round(2), :ebay_new_price => ebay_new_price.to_f.round(2))
+                  end,
+                  :var => price
+              },
+              :prime => {
+                  :attrs => [:old_prime, :new_prime],
+                  :var => prime,
+                  :translate_vals => proc { |vals| p vals; vals.map { |val| p '*****', val.to_s; I18n.t(val.to_s, :scope => :app) } }
+              }
+          }
+      )
 
 
-        diff = serializable_attributes.slice(:amazon_price, :prime).diff(
-            syms.inject({}) { |h, (k, v)| h.merge(k => v[:var]) })
+      diff = serializable_attributes.slice(:amazon_price, :prime).diff(
+          syms.inject({}) { |h, (k, v)| h.merge(k => v[:var]) })
 
-        diff.each_pair do |sym, details|
-          details =syms[sym][:translate_vals].call(details) if syms[sym][:translate_vals]
-          n_attrs = Hash[syms[sym][:attrs].zip(details)].merge(:title => title)
-          if sym.to_sym == :amazon_price
-            price_change = details.inject { |a, b| b - a } # new price - old price
-            ebay_price = ebay_item[:item][:listing_details][:converted_start_price]
-            syms[sym][:extra_attrs].call(ebay_price, ebay_price.to_f + price_change, n_attrs) if syms[sym][:extra_attrs]
-            Ebayr.call(:ReviseItem, :item => { :ItemID => ebay_item_id, :StartPrice => "#{ebay_price.to_f + price_change}" }, :auth_token => Ebayr.auth_token)
-          end
-
-          notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => title)),
-                             :product => self, :image_url => image_url }
+      diff.each_pair do |sym, details|
+        details =syms[sym][:translate_vals].call(details) if syms[sym][:translate_vals]
+        n_attrs = Hash[syms[sym][:attrs].zip(details)].merge(:title => title)
+        if sym.to_sym == :amazon_price
+          price_change = details.inject { |a, b| b - a } # new price - old price
+          ebay_price = ebay_item[:item][:listing_details][:converted_start_price]
+          syms[sym][:extra_attrs].call(ebay_price, ebay_price.to_f + price_change, n_attrs) if syms[sym][:extra_attrs]
+          Ebayr.call(:ReviseItem, :item => { :ItemID => ebay_item_id, :StartPrice => "#{ebay_price.to_f + price_change}" }, :auth_token => Ebayr.auth_token)
         end
 
-        # update amazon old_price & prime
-        update_attributes! syms.slice(*diff.keys).inject({}) { |h, (k, v)| h.merge(k => v[:var]) }
-        notifications
-      else
-        self.class.write_errors I18n.t('errors.diff_error',
-                                       :time => I18n.l(Time.now, :format => :error),
-                                       :id => id,
-                                       :asin_number => amazon_asin_number,
-                                       :ebay_number => ebay_item_id,
-                                       :errors => errors.full_messages.join(' ,'))
+        notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => title)),
+                           :product => self, :image_url => image_url }
       end
-    end
 
-    def self.write_errors(text)
-      File.open("#{Rails.root}/log/errors.txt", 'a') { |f|
-        f << "#{text}\n" }
+      # update amazon old_price & prime
+      update_attributes! syms.slice(*diff.keys).inject({}) { |h, (k, v)| h.merge(k => v[:var]) }
+      notifications
+    else
+      self.class.write_errors I18n.t('errors.diff_error',
+                                     :time => I18n.l(Time.now, :format => :error),
+                                     :id => id,
+                                     :asin_number => amazon_asin_number,
+                                     :ebay_number => ebay_item_id,
+                                     :errors => errors.full_messages.join(' ,'))
     end
+  end
+
+  def self.write_errors(text)
+    File.open("#{Rails.root}/log/errors.txt", 'a') { |f|
+      f << "#{text}\n" }
   end
 end
