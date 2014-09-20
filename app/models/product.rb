@@ -116,7 +116,6 @@ class Product < ActiveRecord::Base
   end
 
   def create_with_requests
-    p valid?
     if valid?
       amazon_item = Amazon::Ecs.item_lookup(amazon_asin_number,
                                             :response_group => 'ItemAttributes,Images',
@@ -131,6 +130,19 @@ class Product < ActiveRecord::Base
     else
       { :errs => errors.full_messages }
     end
+  end
+
+  def admin_create
+    amazon_item = Amazon::Ecs.item_lookup(amazon_asin_number,
+                                          :response_group => 'ItemAttributes,Images',
+                                          :id_type => 'ASIN',
+                                          'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
+    self.amazon_price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
+    self.prime = amazon_price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
+    self.image_url = amazon_item.get_element('MediumImage').get('URL')
+    self.title = amazon_item.get('ItemAttributes/Title')
+    save(:validate => false)
+    I18n.t 'messages.product_create'
   end
 
   def find_diff(amazon_item, ebay_item, notifications = [])
