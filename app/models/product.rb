@@ -103,7 +103,7 @@ class Product < ActiveRecord::Base
       p 'finished!'
       @@thread_compare_working = false
 
-      %w(roiekoper@gmail.com).each do |to|
+      %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
         UserMailer.send_email(Product.all.map(&:title).join(',              '),
                               I18n.t('notifications.compare_complete',
                                      :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
@@ -164,7 +164,7 @@ class Product < ActiveRecord::Base
             price_change = details.inject { |a, b| b - a } # new price - old price
             ebay_price = ebay_item[:item][:listing_details][:converted_start_price]
             syms[sym][:extra_attrs].call(ebay_price, ebay_price.to_f + price_change, n_attrs) if syms[sym][:extra_attrs]
-            # Ebayr.call(:ReviseItem, :item => { :ItemID => ebay_item_id, :StartPrice => "#{ebay_price.to_f + price_change}" }, :auth_token => Ebayr.auth_token)
+            Ebayr.call(:ReviseItem, :item => { :ItemID => ebay_item_id, :StartPrice => "#{ebay_price.to_f + price_change}" }, :auth_token => Ebayr.auth_token)
           end
 
           notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => title)),
