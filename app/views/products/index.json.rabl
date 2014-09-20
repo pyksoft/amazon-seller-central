@@ -1,2 +1,2 @@
 collection :@products
-attributes :id, :title, :item_id, :image_url, :old_price, :new_price, :prime, :seen
+attributes :id, :title,:amazon_asin_number, :ebay_item_id, :image_url, :amazon_asin_number, :prime

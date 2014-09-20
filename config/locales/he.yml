@@ -192,4 +192,5 @@ he:
       long: ! '%d ב%B, %Y %H:%M'
       short: ! '%d %b %H:%M'
       regular: '%d-%m-%Y_%H-%M'
+      error: '%d/%m/%Y %H:%M'
     pm: pm
