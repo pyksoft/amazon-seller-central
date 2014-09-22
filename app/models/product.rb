@@ -14,7 +14,8 @@ class Product < ActiveRecord::Base
 
   def self.amazon_product_ending?(amazon_product)
     !amazon_product.get_hash['Offers'].match('AvailabilityType') ||
-        amazon_product.get_hash['Offers'].string_between_markers('AvailabilityType', 'AvailabilityType').delete('></') != 'now'
+       %w[now futureDate].exclude?(amazon_product.get_hash['Offers'].
+                                       string_between_markers('AvailabilityType', 'AvailabilityType').delete('></'))
   end
 
   def ebay_item_validation
@@ -103,7 +104,7 @@ class Product < ActiveRecord::Base
       p 'finished!'
       @@thread_compare_working = false
 
-      %w(roiekoper@gmail.com).each do |to|
+      %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
         UserMailer.send_email(Product.all.map(&:title).join(',              '),
                               I18n.t('notifications.compare_complete',
                                      :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),

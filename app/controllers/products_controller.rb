@@ -21,7 +21,8 @@ class ProductsController < ApplicationController
   end
 
   def create_product
-    response = Product.new(params.permit(:amazon_asin_number, :ebay_item_id).slice(:amazon_asin_number, :ebay_item_id)).create_with_requests
+    response = Product.new(params.permit(:amazon_asin_number, :ebay_item_id).
+                               slice(:amazon_asin_number, :ebay_item_id)).create_with_requests
     render({:json => (response)})
   end
 
