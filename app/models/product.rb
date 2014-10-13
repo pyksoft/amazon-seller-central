@@ -2,9 +2,10 @@ class Product < ActiveRecord::Base
   validates_uniqueness_of :ebay_item_id, :amazon_asin_number
   validates_presence_of :ebay_item_id, :amazon_asin_number
   validate :ebay_item_validation, :amazon_asin_number_validation
-  validate :prime_validation, :on => :create
+  # validate :prime_validation, :on => :create
 
   @@thread_compare_working = false
+  @@working_count = 1
 
   def self.ebay_product_ending?(ebay_product)
     !ebay_product[:item] ||
@@ -14,8 +15,8 @@ class Product < ActiveRecord::Base
 
   def self.amazon_product_ending?(amazon_product)
     !amazon_product.get_hash['Offers'].match('AvailabilityType') ||
-       %w[now futureDate].exclude?(amazon_product.get_hash['Offers'].
-                                       string_between_markers('AvailabilityType', 'AvailabilityType').delete('></'))
+        %w[now futureDate].exclude?(amazon_product.get_hash['Offers'].
+                                        string_between_markers('AvailabilityType', 'AvailabilityType').delete('></'))
   end
 
   def ebay_item_validation
@@ -29,28 +30,25 @@ class Product < ActiveRecord::Base
   end
 
   def amazon_asin_number_validation
-    amazon_product = Amazon::Ecs.item_lookup(amazon_asin_number,
-                                             :response_group => 'ItemAttributes,Images',
-                                             :id_type => 'ASIN',
-                                             'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
-    reason = if !amazon_product
-               :unknown
-             elsif self.class.amazon_product_ending?(amazon_product)
-               :ending
-             end
+    agent = self.class.create_agent
+    reason = nil
+
+    begin
+      item_page = agent.get("http://www.amazon.com/dp/#{amazon_asin_number}")
+      reason = :ending unless self.class.in_stock?(self.class.one_get_stock(item_page))
+    rescue
+      reason = :unknown
+    end
+
     errors.add(:amazon_asin_number, reason) if reason
   end
 
   def prime_validation
-    amazon_item = Amazon::Ecs.item_lookup(amazon_asin_number,
-                                          :response_group => 'ItemAttributes,Images',
-                                          :id_type => 'ASIN',
-                                          'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
-
-    unless amazon_item &&
-        amazon_item.get_element('Offers/Offer') &&
-        amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
-      errors.add(:amazon_asin_number, :not_prime)
+    begin
+      item_page = self.class.create_agent.
+          get("http://www.amazon.com/dp/#{amazon_asin_number}")
+      errors.add(:amazon_asin_number, :not_prime) unless self.class.one_get_prime(item_page).present?
+    rescue
     end
   end
 
@@ -62,145 +60,267 @@ class Product < ActiveRecord::Base
     end
   end
 
-  def self.compare_products(products = Product.all, checked = [], notifications = [])
+  def self.compare_products
     @@thread_compare_working = true
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
+    notifications = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
+    notifications.each { |notification| Notification.create! notification }
 
-    begin
-      unless checked.size == Product.count
-        products.each do |product|
-          sleep(1) if checked.size % 3 == 0
-          amazon_item = Amazon::Ecs.item_lookup(product.amazon_asin_number,
-                                                :response_group => 'ItemAttributes,Images',
-                                                :id_type => 'ASIN',
-                                                'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
-          ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-          checked << product.id
-
-          case
-            when amazon_product_ending?(amazon_item)
-              notifications << { :text => I18n.t('notifications.amazon_ending', :title => product.title),
-                                 :product => product,
-                                 :image_url => product.image_url }
-              Ebayr.call(:EndItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token, :EndingReason => 'NotAvailable')
-              product.destroy!
-            when ebay_product_ending?(ebay_item)
-              notifications << { :text => I18n.t('notifications.ebay_ending', :title => product.title),
-                                 :product => product,
-                                 :image_url => product.image_url }
-              product.destroy!
-            else
-              product.find_diff amazon_item, ebay_item, notifications
-
-          end
-        end
-      end
-    rescue
-      p 'fail'
-      p checked.size
-      compare_products(Product.where("id NOT IN (#{ checked.empty? ? 'null' : checked.join(',')})"), checked, notifications)
-    else
-      p Time.now
-      p 'finished!'
+    %w(roiekoper@gmail.com).each do |to|
+      UserMailer.send_email(Product.all.map(&:title).join(',
+'),
+                            I18n.t('notifications.compare_complete',
+                                   :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
+                                   :new_notifications_count => notifications.size),
+                            to).deliver
+      @@working_count += 1
       @@thread_compare_working = false
-
-      %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
-        UserMailer.send_email(Product.all.map(&:title).join(',              '),
-                              I18n.t('notifications.compare_complete',
-                                     :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
-                                     :new_notifications_count => notifications.count),
-                              to).deliver
-      end
-
-      notifications.each { |notification| Notification.create! notification }
     end
   end
 
   def create_with_requests
-    if valid?
-      amazon_item = Amazon::Ecs.item_lookup(amazon_asin_number,
-                                            :response_group => 'ItemAttributes,Images',
-                                            :id_type => 'ASIN',
-                                            'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
-      self.amazon_price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
-      self.prime = amazon_price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
-      self.image_url = amazon_item.get_element('MediumImage').get('URL')
-      self.title = amazon_item.get('ItemAttributes/Title')
-      save!
-      { :msg => I18n.t('messages.product_create') }
-    else
-      { :errs => errors.full_messages }
+    begin
+      if valid?
+        item_page = self.class.create_agent.get("http://www.amazon.com/dp/#{amazon_asin_number}")
+        self.amazon_price = self.class.one_get_price(item_page)
+        self.prime = self.class.one_get_prime(item_page).present?
+        self.image_url = self.class.one_get_image_url(item_page)
+        self.title = self.class.one_get_title(item_page)
+        save!
+        { :msg => I18n.t('messages.product_create') }
+      else
+        { :errs => errors.full_messages }
+      end
+    rescue Exception => e
+      { :errs => e.message }
     end
   end
 
   def admin_create
-    amazon_item = Amazon::Ecs.item_lookup(amazon_asin_number,
-                                          :response_group => 'ItemAttributes,Images',
-                                          :id_type => 'ASIN',
-                                          'ItemSearch.Shared.ResponseGroup' => 'Large').items.first
-    self.amazon_price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
-    self.prime = amazon_price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
-    self.image_url = amazon_item.get_element('MediumImage').get('URL')
-    self.title = amazon_item.get('ItemAttributes/Title')
-    save(:validate => false)
-    I18n.t 'messages.product_create'
-  end
-
-  def find_diff(amazon_item, ebay_item, notifications = [])
-    price = amazon_item.get_element('Offers/Offer') && amazon_item.get_element('Offers/Offer').get_element('OfferListing/Price').get('Amount').to_f / 100
-    prime = price && amazon_item.get_element('Offers/Offer').get_element('OfferListing').get('IsEligibleForSuperSaverShipping') == '1'
-
-    if valid? && price && prime
-      syms = HashWithIndifferentAccess.new(
-          {
-              :amazon_price => {
-                  :attrs => [:amazon_old_price, :amazon_new_price],
-                  :extra_attrs => proc do |ebay_old_price, ebay_new_price, attrs|
-                    attrs.merge!(:ebay_old_price => ebay_old_price.to_f.round(2), :ebay_new_price => ebay_new_price.to_f.round(2))
-                  end,
-                  :var => price
-              },
-              :prime => {
-                  :attrs => [:old_prime, :new_prime],
-                  :var => prime,
-                  :translate_vals => proc { |vals| p vals; vals.map { |val| p '*****', val.to_s; I18n.t(val.to_s, :scope => :app) } }
-              }
-          }
-      )
-
-
-      diff = serializable_attributes.slice(:amazon_price, :prime).diff(
-          syms.inject({}) { |h, (k, v)| h.merge(k => v[:var]) })
-
-      diff.each_pair do |sym, details|
-        details =syms[sym][:translate_vals].call(details) if syms[sym][:translate_vals]
-        n_attrs = Hash[syms[sym][:attrs].zip(details)].merge(:title => title)
-        if sym.to_sym == :amazon_price
-          price_change = details.inject { |a, b| b - a } # new price - old price
-          ebay_price = ebay_item[:item][:listing_details][:converted_start_price]
-          syms[sym][:extra_attrs].call(ebay_price, ebay_price.to_f + price_change, n_attrs) if syms[sym][:extra_attrs]
-          Ebayr.call(:ReviseItem, :item => { :ItemID => ebay_item_id, :StartPrice => "#{ebay_price.to_f + price_change}" }, :auth_token => Ebayr.auth_token)
-        end
-
-        notifications << { :text => I18n.t("notifications.#{sym}", n_attrs.merge(:title => title)),
-                           :product => self, :image_url => image_url }
-      end
-
-      # update amazon old_price & prime
-      update_attributes! syms.slice(*diff.keys).inject({}) { |h, (k, v)| h.merge(k => v[:var]) }
-      notifications
-    else
-      self.class.write_errors I18n.t('errors.diff_error',
-                                     :time => I18n.l(Time.now, :format => :error),
-                                     :id => id,
-                                     :asin_number => amazon_asin_number,
-                                     :ebay_number => ebay_item_id,
-                                     :errors => errors.full_messages.join(' ,'))
+    begin
+      item_page = self.class.create_agent.get("http://www.amazon.com/dp/#{amazon_asin_number}")
+      self.amazon_price = self.class.one_get_price(item_page)
+      self.prime = self.class.one_get_prime(item_page).present?
+      self.image_url = self.class.one_get_image_url(item_page)
+      self.title = self.class.one_get_title(item_page)
+      save(:validate => false)
+      I18n.t 'messages.product_create'
+    rescue Exception => e
+      e.message
     end
   end
 
   def self.write_errors(text)
     File.open("#{Rails.root}/log/errors.txt", 'a') { |f|
       f << "#{text}\n" }
+  end
+
+  def self.compare_wish_list
+    agent = create_agent
+    done = false
+    page = 1
+    notifications = []
+    all_assins = []
+    product = nil
+
+    begin
+      while (!done) do
+        p page
+        wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
+        items = wishlist.search('.g-item-sortable')
+        prices_html = items.search('.price-section')
+        availability_html = items.search('.itemAvailability')
+        all_items = prices_html.zip(availability_html)
+        done = true if all_items.empty?
+        all_items.map! do |price, stock|
+          asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
+          product = asin_number && find_by_amazon_asin_number(asin_number)
+          done = true if all_assins.include?(asin_number)
+          all_assins << asin_number
+          if product
+            ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
+            case
+              when product.amazon_stock_change?(get_value(stock), notifications)
+              when product.ebay_stock_change(ebay_item, notifications)
+              when product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
+            end
+          end
+        end
+        page += 1
+      end
+    rescue Exception => e
+      write_errors I18n.t('errors.diff_error',
+                          :time => I18n.l(Time.now, :format => :error),
+                          :id => id,
+                          :asin_number => product.amazon_asin_number,
+                          :ebay_number => product.ebay_item_id,
+                          :errors => "#{product.errors.full_messages.join(' ,')}, \n Exception errors:#{e.message}")
+    end
+    notifications
+  end
+
+  def self.compare_each_product
+    notifications = []
+
+    Product.all.limit(100).each do |product|
+      begin
+        item_page = create_agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
+        if item_page
+          ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
+          case
+            when product.amazon_stock_change?(one_get_stock(item_page), notifications)
+            when product.ebay_stock_change(ebay_item, notifications)
+            else
+              product.price_change?(one_get_price(item_page), ebay_item, notifications)
+              product.prime_change?(one_get_prime(item_page), notifications)
+          end
+        end
+      rescue Exception => e
+        write_errors I18n.t('errors.diff_error',
+                            :time => I18n.l(Time.now, :format => :error),
+                            :id => id,
+                            :asin_number => product.amazon_asin_number,
+                            :ebay_number => product.ebay_item_id,
+                            :errors => "#{product.errors.full_messages.join(' ,')}, \n Exception errors:#{e.message}")
+      end
+    end
+    # p notifications
+    notifications
+  end
+
+  def self.get_value(item)
+    item.children[1].children.present? && item.children[1].children.first.text.strip
+  end
+
+  def amazon_stock_change?(stock, notifications)
+    unless self.class.in_stock?(stock)
+      # Ebayr.call(:EndItem, :ItemID => ebay_item_id,
+      #            :auth_token => Ebayr.auth_token,
+      #            :EndingReason => 'NotAvailable')
+      notifications << { :text => I18n.t('notifications.amazon_ending', :title => title),
+                         :product => self,
+                         :image_url => image_url,
+                         :change_title => 'amazon_unavailable'}
+      # destroy!
+    end
+  end
+
+  def ebay_stock_change(ebay_item, notifications)
+    if self.class.ebay_product_ending?(ebay_item)
+      notifications << { :text => I18n.t('notifications.ebay_ending', :title => title),
+                         :product => self,
+                         :image_url => image_url,
+                         :change_title => 'ebay_unavailable'}
+    end
+    # destroy!
+  end
+
+  def price_change?(new_price, ebay_item, notifications)
+    unless new_price == amazon_price
+      price_change = new_price.to_f - amazon_price.to_f
+      ebay_price = ebay_item[:item][:listing_details][:converted_start_price]
+      # Ebayr.call(:ReviseItem,
+      #            :item => { :ItemID => ebay_item_id,
+      #                       :StartPrice => "#{ebay_price.to_f + price_change}" },
+      #            :auth_token => Ebayr.auth_token)
+
+      notifications << { :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
+                                         :amazon_new_price => self.class.show_price(new_price),
+                                         :ebay_old_price => self.class.show_price(ebay_price),
+                                         :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
+                         :product => self,
+                         :image_url => image_url,
+                         :change_title => "#{ebay_price.to_f + price_change}_price"
+      }
+      # update_attribute :amazon_price, self.class.show_price(new_price)
+    end
+  end
+
+  def prime_change?(new_prime, notifications)
+    unless new_prime == prime
+      notifications << { :text => I18n.t('notifications.prime', # true Bollean to 'true' String
+                                         Hash[[:old_prime, :new_prime].zip([prime, new_prime].map do |val|
+                                           I18n.t(val.to_s, :scope => :app)
+                                         end)]),
+                         :product => self,
+                         :image_url => image_url,
+                         :row_css => new_prime ? 'green_prime' : 'red_prime',
+                         :change_title => "#{new_prime}_prime" }
+      # update_attribute :prime, new_prime
+    end
+  end
+
+  private
+  def self.create_agent
+    agent = Mechanize.new do |agent|
+      agent.user_agent_alias = 'Mac Safari'
+      agent.follow_meta_refresh = true
+      agent.redirect_ok = true
+    end
+
+    url = 'https://www.amazon.com/ap/signin/192-5085168-5154433?_encoding=UTF8&openid.assoc_handle=usflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.com%2Fgp%2Fyourstore%2Fhome%3Fie%3DUTF8%26ref_%3Dgno_custrec_signin'
+    agent.get(url) do |page|
+      search_form = page.form_with(:name => 'signIn')
+      search_form.field_with(name: 'email').value = 'shviro123456@gmail.com'
+      search_form.field_with(name: 'password').value = 'IDSH987'
+      search_form['ap_signin_existing_radio'] = '1'
+      search_form.submit
+    end
+
+    agent
+  end
+
+  def self.in_stock?(stock)
+    ['In Stock', 'left in stock--order soon', 'left in stock'].any? do |instock_str|
+      stock.match(/^(.*?(\b#{instock_str}\b)[^$]*)$/)
+    end
+  end
+
+  def self.show_price(price)
+    price.to_f.round(2)
+  end
+
+  # get many options to get price from html product page. first attr is for price, second for prime.
+  def self.get_match_price(item_page)
+    case
+      when item_page.search('#price').present? &&
+          item_page.search('#price').search('#priceblock_ourprice').present?
+        [item_page.search('#price').search('#priceblock_ourprice'), item_page.search('#price')]
+      when item_page.search('#price').present? &&
+          item_page.search('#price').search('#priceblock_saleprice').present?
+        [item_page.search('#price').search('#priceblock_saleprice'), item_page.search('#price')]
+      when item_page.search('#price').present? &&
+          item_page.search('#price').search('#priceblock_dealprice')
+        [item_page.search('#price').search('#priceblock_dealprice').first.children[1], item_page.search('#price').search('#priceblock_dealprice')]
+      else
+        []
+    end
+  end
+
+  def self.one_get_price(item_page)
+    match_page_price = get_match_price(item_page).first
+    match_page_price.present? && match_page_price.children.first.text[1..-1].to_f || 0
+  end
+
+  def self.one_get_stock(item_page)
+    item_page.search('#availability_feature_div').present? &&
+        item_page.search('#availability_feature_div').search('#availability').
+            first.children[1].children.first.text.strip
+  end
+
+  def self.one_get_prime(item_page)
+    match_page_price = get_match_price(item_page).last
+    match_page_price.present? && (match_page_price.search('#ourprice_shippingmessage').
+        search('.a-icon-prime').present? || match_page_price.search('.a-icon-prime').present?)
+  end
+
+  def self.one_get_title(item_page)
+    item_page.search('#productTitle').children.first.text.strip
+  end
+
+  def self.one_get_image_url(item_page)
+    item_page.search('.a-button-toggle').present? &&
+        item_page.search('.a-button-toggle')[0].children[0].
+            children[1].children[1].attributes['src'].value.gsub('SS40', 'SL160')
   end
 end

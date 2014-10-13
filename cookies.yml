@@ -1,0 +1,99 @@
+---
+amazon.com:
+  /:
+    session-id: !ruby/object:Mechanize::Cookie
+      name: session-id
+      value: 179-8615329-8188600
+      domain: amazon.com
+      for_domain: true
+      path: /
+      secure: false
+      httponly: false
+      expires: Tue, 01 Jan 2036 08:00:01 GMT
+      max_age: 
+      created_at: 2014-09-25 22:20:40.555809000 +03:00
+      accessed_at: 2014-09-25 22:20:40.555809000 +03:00
+    session-id-time: !ruby/object:Mechanize::Cookie
+      name: session-id-time
+      value: 2082787201l
+      domain: amazon.com
+      for_domain: true
+      path: /
+      secure: false
+      httponly: false
+      expires: Tue, 01 Jan 2036 08:00:01 GMT
+      max_age: 
+      created_at: 2014-09-25 22:20:40.555536000 +03:00
+      accessed_at: 2014-09-25 22:20:40.555536000 +03:00
+    a-ogbcbff: !ruby/object:Mechanize::Cookie
+      name: a-ogbcbff
+      value: '1'
+      domain: amazon.com
+      for_domain: true
+      path: /
+      secure: false
+      httponly: false
+      expires: Thu, 25 Sep 2014 19:34:36 GMT
+      max_age: 
+      created_at: 2014-09-25 22:20:37.389311000 +03:00
+      accessed_at: 2014-09-25 22:20:37.392767000 +03:00
+    ubid-main: !ruby/object:Mechanize::Cookie
+      name: ubid-main
+      value: 179-1744052-0194467
+      domain: amazon.com
+      for_domain: true
+      path: /
+      secure: false
+      httponly: false
+      expires: Tue, 01 Jan 2036 08:00:01 GMT
+      max_age: 
+      created_at: 2014-09-25 22:20:40.555025000 +03:00
+      accessed_at: 2014-09-25 22:20:40.555025000 +03:00
+    session-token: !ruby/object:Mechanize::Cookie
+      name: session-token
+      value: H2y0TNrCpPl4SqN/OObxk2LwVFKnNXkLvDngMudmftHc5IPuLYaRVb7pi8PcS59UYth5/z5/eL+VIZ014zPvFxZIZNwzK0wbV6GkHkBqEev8CxTezXNrTlK8pwJ73kbWcuCoTzLa+zzh1f7KoEEOpJr7/+bVL1lGMqPsI+TpT7s61oWFI5pZdLVL/x6ZCTDlRcr6/KIw98mYSlMxbEGl112mUCp5qmckCAJBP+8zZ5Imr+UfWHjtGeHsUyyMF4JqfxhEae+sxnBPQEdSFNbgVw==
+      domain: amazon.com
+      for_domain: true
+      path: /
+      secure: false
+      httponly: false
+      expires: Wed, 20 Sep 2034 19:20:36 GMT
+      max_age: 
+      created_at: 2014-09-25 22:20:40.555288000 +03:00
+      accessed_at: 2014-09-25 22:20:40.555288000 +03:00
+    x-main: !ruby/object:Mechanize::Cookie
+      name: x-main
+      value: 3bvmx3aJnAVnZL5xwipjpZrDF7pZNAlg2IOrk1ZYy0kFQYbf@KJ1mQVvH9cDuqjp
+      domain: amazon.com
+      for_domain: true
+      path: /
+      secure: false
+      httponly: false
+      expires: Wed, 20 Sep 2034 19:20:37 GMT
+      max_age: 
+      created_at: 2014-09-25 22:20:37.390258000 +03:00
+      accessed_at: 2014-09-25 22:20:37.392767000 +03:00
+    at-main: !ruby/object:Mechanize::Cookie
+      name: at-main
+      value: 5|keZRv5H3xSD+u65yra2Ubi6ou322eMaCz/khADLP0qHZkm4BlDAzNbkdnMYxWrLf7ez2CCUygKEzAfIPVIeN9z9+dNYWy1wbtPzvbFCq735jiWjZVV1h91auNEBgJVyBAP6MDXjt4ZDq0R6Xsnq6PRxRcr/PTudJh9KsH3GUB3GKoKEgLbtX46fPJg6a8KXprvRWZ8s2RtU/RDAz4WM+T2oAUsppOrVu4gl9UzxVK+s=
+      domain: amazon.com
+      for_domain: true
+      path: /
+      secure: true
+      httponly: false
+      expires: Wed, 20 Sep 2034 19:20:37 GMT
+      max_age: 
+      created_at: 2014-09-25 22:20:37.390638000 +03:00
+      accessed_at: 2014-09-25 22:20:37.392767000 +03:00
+    x-wl-uid: !ruby/object:Mechanize::Cookie
+      name: x-wl-uid
+      value: 1ggENPqZkaJXeeRsEI+/DJbqcUoyYmd8uBzTzKk0KznshVaYAkHWNCHjBsX1/l8q211i2tO5MdZ+aOSLJqH+/VA==
+      domain: amazon.com
+      for_domain: true
+      path: /
+      secure: false
+      httponly: false
+      expires: Tue, 01 Jan 2036 08:00:01 GMT
+      max_age: 
+      created_at: 2014-09-25 22:20:40.554687000 +03:00
+      accessed_at: 2014-09-25 22:20:40.554687000 +03:00

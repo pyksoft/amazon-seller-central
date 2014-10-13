@@ -9,7 +9,7 @@ class NotificationsController < ApplicationController
   end
 
   def index
-    @notifications = Notification.where('seen is null OR seen = false')
+    @notifications = Notification.sorted_notifications
     respond_with(@notifications)
   end
 end
