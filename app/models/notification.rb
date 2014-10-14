@@ -3,7 +3,9 @@ class Notification < ActiveRecord::Base
 
   def self.sorted_notifications
     unseen_notifications = Notification.where('seen is null OR seen = false')
-    sorted_notifications = unseen_notifications.select{|notification| notification.change_title && notification.change_title.include?('price')}.sort_by do |price_title|
+    sorted_notifications = unseen_notifications.select do |notification|
+      notification.change_title && notification.change_title.include?('price')
+    end.sort_by do |price_title|
       price_title.delete('_price').to_f
     end.reverse
     (unseen_notifications - sorted_notifications).sort_by do |notification|
