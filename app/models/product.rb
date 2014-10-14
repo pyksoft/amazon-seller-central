@@ -228,7 +228,7 @@ class Product < ActiveRecord::Base
                                          :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
                          :product => self,
                          :image_url => image_url,
-                         :change_title => "#{ebay_price.to_f + price_change}_price"
+                         :change_title => "#{(ebay_price.to_f + price_change).round(2)}_price"
       }
       # update_attribute :amazon_price, self.class.show_price(new_price)
     end

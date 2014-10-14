@@ -6,6 +6,13 @@ class Notification < ActiveRecord::Base
     p(unseen_notifications.select do |notification|
       notification.change_title && notification.change_title.include?('price')
     end.map{|notification| notification.change_title.delete('_price').to_f})
+
+    p(unseen_notifications.select do |notification|
+      notification.change_title && notification.change_title.include?('price')
+    end.sort_by do |notification|
+      notification.change_title.delete('_price').to_f
+    end)
+
     sorted_notifications = unseen_notifications.select do |notification|
       notification.change_title && notification.change_title.include?('price')
     end.sort_by do |notification|
