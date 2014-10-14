@@ -62,7 +62,7 @@ class Product < ActiveRecord::Base
 
   def self.compare_products
     @@thread_compare_working = true
-    Notification.where('seen is null OR seen = false').update_all(:seen => true)
+    # Notification.where('seen is null OR seen = false').update_all(:seen => true)
     notifications = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
     notifications.each { |notification| Notification.create! notification }
 
@@ -125,14 +125,13 @@ class Product < ActiveRecord::Base
 
     begin
       while (!done) do
-        p page
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
         all_items = prices_html.zip(availability_html)
         done = true if all_items.empty?
-        all_items.map! do |price, stock|
+        all_items.map do |price, stock|
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
           product = asin_number && find_by_amazon_asin_number(asin_number)
           done = true if all_assins.include?(asin_number)
@@ -162,7 +161,7 @@ class Product < ActiveRecord::Base
   def self.compare_each_product
     notifications = []
 
-    Product.all.limit(100).each do |product|
+    Product.all.each do |product|
       begin
         item_page = create_agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
         if item_page
@@ -184,7 +183,6 @@ class Product < ActiveRecord::Base
                             :errors => "#{product.errors.full_messages.join(' ,')}, \n Exception errors:#{e.message}")
       end
     end
-    # p notifications
     notifications
   end
 
