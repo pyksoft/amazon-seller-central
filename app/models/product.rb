@@ -62,6 +62,7 @@ class Product < ActiveRecord::Base
 
   def self.compare_products
     @@thread_compare_working = true
+    p "*** #{@@working_count} ***"
     notifications = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
     notifications.each { |notification| Notification.create! notification }
 
@@ -161,7 +162,8 @@ class Product < ActiveRecord::Base
   def self.compare_each_product
     notifications = []
 
-    Product.all.each do |product|
+    Product.all.each_with_index do |product,i|
+      p i
       begin
         item_page = create_agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
         if item_page
