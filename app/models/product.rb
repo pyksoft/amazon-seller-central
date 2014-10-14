@@ -64,6 +64,7 @@ class Product < ActiveRecord::Base
     @@thread_compare_working = true
     p "*** #{@@working_count} ***"
     notifications = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
+    Notification.where('seen is null OR seen = false').update_all(:seen => true)
     notifications.each { |notification| Notification.create! notification }
 
     %w(roiekoper@gmail.com).each do |to|
@@ -75,7 +76,6 @@ class Product < ActiveRecord::Base
                             to).deliver
       @@working_count += 1
       @@thread_compare_working = false
-      Notification.where('seen is null OR seen = false').update_all(:seen => true)
     end
   end
 
