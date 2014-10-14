@@ -5,7 +5,7 @@ class Notification < ActiveRecord::Base
     unseen_notifications = Notification.where('seen is null OR seen = false')
     p unseen_notifications.select do |notification|
       notification.change_title && notification.change_title.include?('price')
-    end.map{|a| a.delete('_price').to_f}
+    end.map{|a| a.change_title.delete('_price').to_f}
     sorted_notifications = unseen_notifications.select do |notification|
       notification.change_title && notification.change_title.include?('price')
     end.sort_by do |notification|
