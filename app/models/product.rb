@@ -161,30 +161,29 @@ class Product < ActiveRecord::Base
 
   def self.compare_each_product
     notifications = []
-
-    Product.all.each_with_index do |product,i|
-      p i
+    agent = create_agent
+    Product.all.each do |product|
       begin
-        item_page = create_agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
-        if item_page
-          ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-          case
-            when product.amazon_stock_change?(one_get_stock(item_page), notifications)
-            when product.ebay_stock_change(ebay_item, notifications)
-            else
-              product.price_change?(one_get_price(item_page), ebay_item, notifications)
-              product.prime_change?(one_get_prime(item_page), notifications)
-          end
+        item_page = agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
+        ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
+        case
+          when product.amazon_stock_change?(one_get_stock(item_page), notifications)
+          when product.ebay_stock_change(ebay_item, notifications)
+          else
+            product.price_change?(one_get_price(item_page), ebay_item, notifications)
+            product.prime_change?(one_get_prime(item_page), notifications)
         end
-      rescue Exception => e
-        write_errors I18n.t('errors.diff_error',
-                            :time => I18n.l(Time.now, :format => :error),
-                            :id => id,
-                            :asin_number => product.amazon_asin_number,
-                            :ebay_number => product.ebay_item_id,
-                            :errors => "#{product.errors.full_messages.join(' ,')}, \n Exception errors:#{e.message}")
+      rescue
+        notifications << {
+            :text => I18n.t('notifications.unknown_item', :title => product.title),
+            :product => product,
+            :image_url => product.image_url,
+            :change_title => :unknown_item
+        }
+        # product.destroy!
       end
     end
+
     notifications
   end
 
@@ -200,7 +199,7 @@ class Product < ActiveRecord::Base
       notifications << { :text => I18n.t('notifications.amazon_ending', :title => title),
                          :product => self,
                          :image_url => image_url,
-                         :change_title => 'amazon_unavailable'}
+                         :change_title => 'amazon_unavailable' }
       # destroy!
     end
   end
@@ -210,7 +209,7 @@ class Product < ActiveRecord::Base
       notifications << { :text => I18n.t('notifications.ebay_ending', :title => title),
                          :product => self,
                          :image_url => image_url,
-                         :change_title => 'ebay_unavailable'}
+                         :change_title => 'ebay_unavailable' }
     end
     # destroy!
   end
@@ -303,9 +302,10 @@ class Product < ActiveRecord::Base
   end
 
   def self.one_get_stock(item_page)
-    item_page.search('#availability_feature_div').present? &&
+    (item_page.search('#availability_feature_div').present? &&
+        item_page.search('#availability_feature_div').search('#availability').present? &&
         item_page.search('#availability_feature_div').search('#availability').
-            first.children[1].children.first.text.strip
+            first.children[1].children.first.text.strip) || ''
   end
 
   def self.one_get_prime(item_page)
