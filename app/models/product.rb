@@ -62,17 +62,22 @@ class Product < ActiveRecord::Base
 
   def self.compare_products
     @@thread_compare_working = true
+    notifications = []
     p "*** #{@@working_count} ***"
-    notifications = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
+
+    seconds = Benchmark.realtime do
+      notifications = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
+    end
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
     notifications.each { |notification| Notification.create! notification }
 
-    %w(roiekoper@gmail.com).each do |to|
+    %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
       UserMailer.send_email(Product.all.map(&:title).join(',
 '),
                             I18n.t('notifications.compare_complete',
                                    :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
-                                   :new_notifications_count => notifications.size),
+                                   :new_notifications_count => notifications.size,
+                                   :work_time => "#{Time.at(seconds).gmtime.strftime('%R:%S')}"),
                             to).deliver
       @@working_count += 1
       @@thread_compare_working = false
@@ -236,7 +241,7 @@ class Product < ActiveRecord::Base
   end
 
   def prime_change?(new_prime, notifications)
-    unless new_prime  == prime
+    unless new_prime == prime
       notifications << { :text => I18n.t('notifications.prime', # true Bollean to 'true' String
                                          Hash[[:old_prime, :new_prime].zip([prime, new_prime].map do |val|
                                            I18n.t(val.to_s, :scope => :app)
