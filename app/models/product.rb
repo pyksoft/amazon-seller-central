@@ -2,7 +2,7 @@ class Product < ActiveRecord::Base
   validates_uniqueness_of :ebay_item_id, :amazon_asin_number
   validates_presence_of :ebay_item_id, :amazon_asin_number
   validate :ebay_item_validation, :amazon_asin_number_validation
-  # validate :prime_validation, :on => :create
+  validate :prime_validation, :on => :create
 
   @@thread_compare_working = false
   @@working_count = 1
@@ -47,7 +47,7 @@ class Product < ActiveRecord::Base
     begin
       item_page = self.class.create_agent.
           get("http://www.amazon.com/dp/#{amazon_asin_number}")
-      errors.add(:amazon_asin_number, :not_prime) unless self.class.one_get_prime(item_page).present?
+      errors.add(:amazon_asin_number, :not_prime) unless self.class.one_get_prime(item_page)
     rescue
     end
   end
@@ -162,7 +162,7 @@ class Product < ActiveRecord::Base
   def self.compare_each_product
     notifications = []
     agent = create_agent
-    Product.all.each do |product|
+    [Product.find_by_amazon_asin_number('B00A2WV5WI')].each do |product|
       begin
         item_page = agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
@@ -236,7 +236,7 @@ class Product < ActiveRecord::Base
   end
 
   def prime_change?(new_prime, notifications)
-    unless new_prime == prime
+    unless new_prime  == prime
       notifications << { :text => I18n.t('notifications.prime', # true Bollean to 'true' String
                                          Hash[[:old_prime, :new_prime].zip([prime, new_prime].map do |val|
                                            I18n.t(val.to_s, :scope => :app)
