@@ -1028,6 +1028,7 @@ class AddWishlistProducts < ActiveRecord::Migration
 
     p 'finished update all current products'
     p "start create new products from file, #{products_text.length} products"
+    p 'without over al current products'
 
     products_text.each_with_index do |product_details, i|
       begin
