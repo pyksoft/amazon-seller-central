@@ -22,11 +22,12 @@ class ProductsController < ApplicationController
 
   def create_product
     response = Product.new(params.permit(:amazon_asin_number, :ebay_item_id).
-                               slice(:amazon_asin_number, :ebay_item_id)).create_with_requests
-    render({:json => (response)})
+                               slice(:amazon_asin_number, :ebay_item_id)).
+        inject({}) { |h, (k, v)| h.merge(k => v.upcase) }.create_with_requests
+    render({ :json => (response) })
   end
 
   def download_errors
-    send_file "#{Rails.root}/log/errors.txt",:type => 'text/plain'
+    send_file "#{Rails.root}/log/errors.txt", :type => 'text/plain'
   end
 end

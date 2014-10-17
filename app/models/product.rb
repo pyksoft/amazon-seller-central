@@ -117,8 +117,9 @@ class Product < ActiveRecord::Base
   end
 
   def self.write_errors(text)
-    File.open("#{Rails.root}/log/errors.txt", 'a') { |f|
-      f << "#{text}\n" }
+    File.open("#{Rails.root}/log/errors.txt", 'a') do |f|
+      f << "#{text}\n"
+    end
   end
 
   def self.compare_wish_list
@@ -167,7 +168,7 @@ class Product < ActiveRecord::Base
   def self.compare_each_product
     notifications = []
     agent = create_agent
-    [Product.find_by_amazon_asin_number('B00A2WV5WI')].each do |product|
+    Product.all.each do |product|
       begin
         item_page = agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
