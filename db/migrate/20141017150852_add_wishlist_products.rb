@@ -1008,44 +1008,44 @@ class AddWishlistProducts < ActiveRecord::Migration
       details = details.split(',').map(&:strip)
       details.size == 2 && details.first.length == 10 && details.last.length == 12
     end
-    #
-    # agent = Product.create_agent
-    # errors = []
-    #
-    # # over on all current products and update price & prime.
-    # Product.all.each_with_index do |product|
-    #   begin
-    #     item_page = agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
-    #     product.amazon_asin_number = product.amazon_asin_number.upcase
-    #     product.amazon_price = Product.one_get_price(item_page)
-    #     product.prime = Product.one_get_prime(item_page)
-    #     product.save(:validate => false)
-    #   rescue Exception => e
-    #     p "Error #{e.message} in #{product.id} product"
-    #   end
-    # end
-    #
-    #
-    # p 'finished update all current products'
-    # p "start create new products from file, #{products_text.length} products"
-    #
-    # products_text.each_with_index do |product_details, i|
-    #   begin
-    #     p i if i % 50 == 0
-    #     asin_number, ebay_number = product_details.split(',').map(&:strip)
-    #     errors << Product.new(:amazon_asin_number => asin_number,
-    #                           :ebay_item_id => ebay_number).create_with_requests.
-    #         merge(:product => { :ebay_number => ebay_number, :asin_number => asin_number }, :index => i)
-    #   rescue Exception => e
-    #     errors << "Error #{e.message} in #{i} -> #{asin_number},#{ebay_number}"
-    #   end
-    # end
-    #
-    #
-    # File.open("#{Rails.root}/log/add_wishlist_errors.txt", 'a') do |f|
-    #   errors.each do |error|
-    #     f << "#{error[:index]}. #{error.except(:index)}\n"
-    #   end
-    # end
+
+    agent = Product.create_agent
+    errors = []
+
+    # over on all current products and update price & prime.
+    Product.all.each_with_index do |product|
+      begin
+        item_page = agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
+        product.amazon_asin_number = product.amazon_asin_number.upcase
+        product.amazon_price = Product.one_get_price(item_page)
+        product.prime = Product.one_get_prime(item_page)
+        product.save(:validate => false)
+      rescue Exception => e
+        p "Error #{e.message} in #{product.id} product"
+      end
+    end
+
+
+    p 'finished update all current products'
+    p "start create new products from file, #{products_text.length} products"
+
+    products_text.each_with_index do |product_details, i|
+      begin
+        p i if i % 50 == 0
+        asin_number, ebay_number = product_details.split(',').map(&:strip)
+        errors << Product.new(:amazon_asin_number => asin_number,
+                              :ebay_item_id => ebay_number).create_with_requests.
+            merge(:product => { :ebay_number => ebay_number, :asin_number => asin_number }, :index => i)
+      rescue Exception => e
+        errors << "Error #{e.message} in #{i} -> #{asin_number},#{ebay_number}"
+      end
+    end
+
+
+    File.open("#{Rails.root}/log/add_wishlist_errors.txt", 'a') do |f|
+      errors.each do |error|
+        f << "#{error[:index]}. #{error.except(:index)}\n"
+      end
+    end
   end
 end
