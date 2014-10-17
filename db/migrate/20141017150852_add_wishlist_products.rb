@@ -1009,21 +1009,21 @@ class AddWishlistProducts < ActiveRecord::Migration
       details.size == 2 && details.first.length == 10 && details.last.length == 12
     end
 
-    agent = Product.create_agent
+    # agent = Product.create_agent
     errors = []
 
     # over on all current products and update price & prime.
-    Product.all.each_with_index do |product|
-      begin
-        item_page = agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
-        product.amazon_asin_number = product.amazon_asin_number.upcase
-        product.amazon_price = Product.one_get_price(item_page)
-        product.prime = Product.one_get_prime(item_page)
-        product.save(:validate => false)
-      rescue Exception => e
-        p "Error #{e.message} in #{product.id} product"
-      end
-    end
+    # Product.all.each_with_index do |product|
+    #   begin
+    #     item_page = agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
+    #     product.amazon_asin_number = product.amazon_asin_number.upcase
+    #     product.amazon_price = Product.one_get_price(item_page)
+    #     product.prime = Product.one_get_prime(item_page)
+    #     product.save(:validate => false)
+    #   rescue Exception => e
+    #     p "Error #{e.message} in #{product.id} product"
+    #   end
+    # end
 
 
     p 'finished update all current products'
@@ -1031,11 +1031,13 @@ class AddWishlistProducts < ActiveRecord::Migration
 
     products_text.each_with_index do |product_details, i|
       begin
-        p i if i % 50 == 0
+        p i
         asin_number, ebay_number = product_details.split(',').map(&:strip)
-        errors << Product.new(:amazon_asin_number => asin_number,
-                              :ebay_item_id => ebay_number).create_with_requests.
+        error = Product.new(:amazon_asin_number => asin_number,
+                             :ebay_item_id => ebay_number).create_with_requests.
             merge(:product => { :ebay_number => ebay_number, :asin_number => asin_number }, :index => i)
+        p error if error[:msg]
+        errors << error
       rescue Exception => e
         errors << "Error #{e.message} in #{i} -> #{asin_number},#{ebay_number}"
       end
