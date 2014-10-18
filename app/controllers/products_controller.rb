@@ -2,7 +2,8 @@ class ProductsController < ApplicationController
   respond_to :json
   before_filter :init_headers
   skip_before_filter :verify_authenticity_token
-  http_basic_authenticate_with :name => 'admin', :password => 'roieroie', :only => :download_errors, :download_compare_errors
+  http_basic_authenticate_with :name => 'admin', :password => 'roieroie', :only => :download_errors
+  http_basic_authenticate_with :name => 'admin', :password => 'roieroie', :only => :download_compare_errors
 
   def init_headers
     headers['Access-Control-Allow-Origin'] = '*'
