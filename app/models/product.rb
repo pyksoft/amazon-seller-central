@@ -1361,24 +1361,26 @@ class Product < ActiveRecord::Base
     p "start create new products from file, #{products_text.length} products"
     p 'without over al current products'
 
-    products_text.each_with_index do |product_details, i|
-      begin
-        p i
-        asin_number, ebay_number = product_details.split(',').map(&:strip)
-        error = new(:amazon_asin_number => asin_number,
-                            :ebay_item_id => ebay_number).create_with_requests.
-            merge(:product => { :ebay_number => ebay_number, :asin_number => asin_number }, :index => i)
-        p error if error[:msg]
-        errors << error
-      rescue Exception => e
-        errors << "Error #{e.message} in #{i} -> #{asin_number},#{ebay_number}"
+    Thread.new do
+      products_text.each_with_index do |product_details, i|
+        begin
+          p i
+          asin_number, ebay_number = product_details.split(',').map(&:strip)
+          error = new(:amazon_asin_number => asin_number,
+                      :ebay_item_id => ebay_number).create_with_requests.
+              merge(:product => { :ebay_number => ebay_number, :asin_number => asin_number }, :index => i)
+          p error if error[:msg]
+          errors << error
+        rescue Exception => e
+          errors << "Error #{e.message} in #{i} -> #{asin_number},#{ebay_number}"
+        end
       end
-    end
 
 
-    File.open("#{Rails.root}/log/add_wishlist_errors.txt", 'a') do |f|
-      errors.each do |error|
-        f << "#{error[:index]}. #{error.except(:index)}\n"
+      File.open("#{Rails.root}/log/add_wishlist_errors.txt", 'a') do |f|
+        errors.each do |error|
+          f << "#{error[:index]}. #{error.except(:index)}\n"
+        end
       end
     end
     p "Finish upload all file, errors size #{errors.size}"
