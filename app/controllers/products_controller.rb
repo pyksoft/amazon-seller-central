@@ -35,4 +35,8 @@ class ProductsController < ApplicationController
   def download_compare_errors
     send_file "#{Rails.root}/log/add_wishlist_errors.txt", :type => 'text/plain'
   end
+
+  def upload_wish_list
+    Product.upload_wish_list
+  end
 end
