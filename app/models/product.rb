@@ -1362,27 +1362,36 @@ class Product < ActiveRecord::Base
     p 'without over al current products'
 
     Thread.new do
-      products_text.each_with_index do |product_details, i|
-        begin
-          p i
-          asin_number, ebay_number = product_details.split(',').map(&:strip)
-          error = new(:amazon_asin_number => asin_number,
-                      :ebay_item_id => ebay_number).create_with_requests.
-              merge(:product => { :ebay_number => ebay_number, :asin_number => asin_number }, :index => i)
-          p error if error[:msg]
-          errors << error
-        rescue Exception => e
-          errors << "Error #{e.message} in #{i} -> #{asin_number},#{ebay_number}"
+      products_text.in_groups_of(100).each_with_index do |product_groups,g_i|
+        product_groups.each_with_index do |product_details, i|
+          begin
+            p i
+            asin_number, ebay_number = product_details.split(',').map(&:strip)
+            error = new(:amazon_asin_number => asin_number,
+                        :ebay_item_id => ebay_number).create_with_requests.
+                merge(:product => { :ebay_number => ebay_number, :asin_number => asin_number }, :index => i)
+            p error if error[:msg]
+            errors << error
+          rescue Exception => e
+            errors << "Error #{e.message} in #{i} -> #{asin_number},#{ebay_number}"
+          end
         end
-      end
 
 
-      File.open("#{Rails.root}/log/add_wishlist_errors.txt", 'a') do |f|
-        errors.each do |error|
-          f << "#{error[:index]}. #{error.except(:index)}\n"
+        File.open("#{Rails.root}/log/add_wishlist_errors.txt", 'a') do |f|
+          errors.each do |error|
+            f << "#{error[:index]}. #{error.except(:index)}\n"
+          end
         end
+
+        UserMailer.send_email(errors.join("\n,
+"),
+                              "Finish #{g_i} group!, errors number: #{errors.length}",
+                              'roiekoper@gmail.com').deliver
+
       end
+
+      p "Finish upload all file, errors size #{errors.size}"
     end
-    p "Finish upload all file, errors size #{errors.size}"
   end
 end
