@@ -79,9 +79,9 @@ class Product < ActiveRecord::Base
                                    :new_notifications_count => notifications.size,
                                    :work_time => "#{Time.at(seconds).gmtime.strftime('%R:%S')}"),
                             to).deliver
-      @@working_count += 1
-      @@thread_compare_working = false
     end
+    @@working_count += 1
+    @@thread_compare_working = false
   end
 
   def create_with_requests
@@ -1362,7 +1362,7 @@ class Product < ActiveRecord::Base
     p 'without over al current products'
 
     Thread.new do
-      products_text.in_groups_of(100).each_with_index do |product_groups,g_i|
+      products_text.in_groups_of(100).each_with_index do |product_groups, g_i|
         product_groups.each_with_index do |product_details, i|
           begin
             p i
