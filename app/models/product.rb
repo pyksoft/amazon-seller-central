@@ -129,7 +129,7 @@ class Product < ActiveRecord::Base
     notifications = []
     all_assins = []
     product = nil
-    sleep(1)
+    sleep(2)
 
     begin
       while (!done) do
