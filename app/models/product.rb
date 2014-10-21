@@ -139,6 +139,7 @@ class Product < ActiveRecord::Base
         availability_html = items.search('.itemAvailability')
         all_items = prices_html.zip(availability_html)
         done = true if all_items.empty?
+        p all_items.size
         all_items.map do |price, stock|
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
           product = asin_number && find_by_amazon_asin_number(asin_number)
