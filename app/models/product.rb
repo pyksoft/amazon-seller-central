@@ -129,15 +129,18 @@ class Product < ActiveRecord::Base
     notifications = []
     all_assins = []
     product = nil
+    sleep(2)
 
     begin
       while (!done) do
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
+        p "item size: #{items.size}"
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
         all_items = prices_html.zip(availability_html)
         p all_items.size
+        done = true if all_items.empty?
         all_items.map do |price, stock|
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
           product = asin_number && find_by_amazon_asin_number(asin_number)
