@@ -71,7 +71,7 @@ class Product < ActiveRecord::Base
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
     notifications.each { |notification| Notification.create! notification }
 
-    %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
+    %w(roiekoper@gmail.com).each do |to|
       UserMailer.send_email(Product.all.map(&:title).join(',
 '),
                             I18n.t('notifications.compare_complete',
@@ -137,6 +137,7 @@ class Product < ActiveRecord::Base
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
         all_items = prices_html.zip(availability_html)
+        p all_items.size
         done = true if all_items.empty?
         all_items.map do |price, stock|
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
