@@ -133,6 +133,7 @@ class Product < ActiveRecord::Base
     begin
       while (!done) do
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
+        p wishlist
         items = wishlist.search('.g-item-sortable')
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
