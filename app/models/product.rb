@@ -71,7 +71,7 @@ class Product < ActiveRecord::Base
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
     notifications.each { |notification| Notification.create! notification }
 
-    %w(roiekoper@gmail.com).each do |to|
+    %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
       UserMailer.send_email(Product.all.map(&:title).join(',
 '),
                             I18n.t('notifications.compare_complete',
@@ -129,17 +129,15 @@ class Product < ActiveRecord::Base
     notifications = []
     all_assins = []
     product = nil
-    sleep(2)
+    sleep(1)
 
     begin
       while (!done) do
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
-        p "items size #{items.size}"
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
         all_items = prices_html.zip(availability_html)
-        p all_items.size
         done = true if all_items.empty?
         all_items.map do |price, stock|
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
