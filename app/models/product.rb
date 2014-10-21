@@ -129,12 +129,13 @@ class Product < ActiveRecord::Base
     notifications = []
     all_assins = []
     product = nil
+    sleep(2)
 
     begin
       while (!done) do
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
-        p wishlist
         items = wishlist.search('.g-item-sortable')
+        p "items size #{items.size}"
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
         all_items = prices_html.zip(availability_html)
