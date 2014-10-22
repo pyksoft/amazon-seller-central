@@ -267,13 +267,20 @@ class Product < ActiveRecord::Base
     end
 
     url = 'https://www.amazon.com/ap/signin/192-5085168-5154433?_encoding=UTF8&openid.assoc_handle=usflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.com%2Fgp%2Fyourstore%2Fhome%3Fie%3DUTF8%26ref_%3Dgno_custrec_signin'
-    agent.get(url) do |page|
-      search_form = page.form_with(:name => 'signIn')
-      search_form.field_with(name: 'email').value = 'shviro123456@gmail.com'
-      search_form.field_with(name: 'password').value = 'IDSH987'
-      search_form['ap_signin_existing_radio'] = '1'
-      search_form.submit
+    page = agent.get(url)
+    form = page.forms.first
+    form['email'] = 'shviro123456@gmail.com'
+    form['password'] = 'IDSH987'
+    form['ap_signin_existing_radio'] = '1'
+    page = form.submit
+
+    if page.uri.to_s.include?('https://www.amazon.com/ap/dcq?ie=UTF8&dcq.arb.value')
+      zicode_form = page.forms.first
+      zicode_form['dcq_question_subjective_1'] = '11365'
+      zipcode_page = zicode_form.submit
     end
+
+    p zipcode_page
 
     agent
   end
