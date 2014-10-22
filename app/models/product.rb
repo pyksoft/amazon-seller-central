@@ -136,6 +136,7 @@ class Product < ActiveRecord::Base
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
         p "item size: #{items.size}"
+        p "Page: #{page}"
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
         all_items = prices_html.zip(availability_html)
