@@ -280,7 +280,7 @@ class Product < ActiveRecord::Base
 
   def self.in_stock?(stock)
     ['In Stock', 'left in stock--order soon', 'left in stock'].any? do |instock_str|
-      stock.match(/^(.*?(\b#{instock_str}\b)[^$]*)$/)
+      stock.downcase.match(/^(.*?(\b#{instock_str.downcase}\b)[^$]*)$/)
     end
   end
 
