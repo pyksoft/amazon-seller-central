@@ -139,7 +139,6 @@ class Product < ActiveRecord::Base
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
         all_items = prices_html.zip(availability_html)
-        p all_items.size
         done = true if all_items.empty?
         all_items.map do |price, stock|
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
@@ -279,8 +278,6 @@ class Product < ActiveRecord::Base
       zicode_form['dcq_question_subjective_1'] = '11365'
       zipcode_page = zicode_form.submit
     end
-
-    p zipcode_page
 
     agent
   end
