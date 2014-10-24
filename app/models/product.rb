@@ -8,9 +8,10 @@ class Product < ActiveRecord::Base
   @@working_count = 1
 
   def self.ebay_product_ending?(ebay_product)
-    !ebay_product[:item] ||
-        (!ebay_product[:item][:listing_details][:ending_reason] &&
-            ebay_product[:item][:listing_details][:relisted_item_id])
+    ebay_product[:item].present? &&
+        ((ebay_product[:item][:listing_details][:ending_reason].present? &&
+            ebay_product[:item][:listing_details][:relisted_item_id].present?) ||
+            !ebay_product[:item][:listing_details][:ending_reason].present?)
   end
 
   def self.amazon_product_ending?(amazon_product)
