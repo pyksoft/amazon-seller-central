@@ -9,9 +9,9 @@ class Product < ActiveRecord::Base
 
   def self.ebay_product_ending?(ebay_product)
     ebay_product[:item].present? &&
-        ((ebay_product[:item][:listing_details][:ending_reason].present? &&
+        ((!ebay_product[:item][:listing_details][:ending_reason].present? &&
             ebay_product[:item][:listing_details][:relisted_item_id].present?) ||
-            !ebay_product[:item][:listing_details][:ending_reason].present?)
+            ebay_product[:item][:listing_details][:ending_reason].present?)
   end
 
   def self.amazon_product_ending?(amazon_product)
@@ -73,7 +73,7 @@ class Product < ActiveRecord::Base
     notifications.each { |notification| Notification.create! notification }
 
     emails_to = ['roiekoper@gmail.com']
-    emails_to <<  'idanshviro@gmail.com' if Rails.env != 'development'
+    emails_to << 'idanshviro@gmail.com' if Rails.env != 'development'
     emails_to.each do |to|
       UserMailer.send_email(Product.all.map(&:title).join(',
 '),
@@ -138,15 +138,24 @@ class Product < ActiveRecord::Base
       while (!done) do
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
+
+        if items.empty?
+          done = true
+          break
+        end
+
         p "item size: #{items.size}"
         p "Page: #{page}"
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
-        all_items = prices_html.zip(availability_html)
-        done = true if all_items.empty?
-        all_items.map do |price, stock|
+        products = Product.where(:amazon_asin_number => prices_html.map do |price_html|
+          YAML.load(price_html.attributes['data-item-prime-info'].value)['asin']
+        end)
+
+        all_items = prices_html.zip(availability_html, products)
+
+        all_items.map do |price, stock, product|
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
-          product = asin_number && find_by_amazon_asin_number(asin_number)
           done = true if all_assins.include?(asin_number)
           all_assins << asin_number
           if product
