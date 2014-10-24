@@ -35,7 +35,7 @@ class Product < ActiveRecord::Base
     reason = nil
 
     begin
-      item_page = agent.get("http://www.amazon.com/dp/#{amazon_asin_number}")
+      item_page = agent.get(item_url)
       reason = :ending unless self.class.in_stock?(self.class.one_get_stock(item_page))
     rescue
       reason = :unknown
@@ -47,7 +47,7 @@ class Product < ActiveRecord::Base
   def prime_validation
     begin
       item_page = self.class.create_agent.
-          get("http://www.amazon.com/dp/#{amazon_asin_number}")
+          get(item_url)
       errors.add(:amazon_asin_number, :not_prime) unless self.class.one_get_prime(item_page)
     rescue
     end
@@ -90,7 +90,7 @@ class Product < ActiveRecord::Base
   def create_with_requests
     begin
       if valid?
-        item_page = self.class.create_agent.get("http://www.amazon.com/dp/#{amazon_asin_number}")
+        item_page = self.class.create_agent.get(item_url)
         self.amazon_price = self.class.one_get_price(item_page)
         self.prime = self.class.one_get_prime(item_page).present?
         self.image_url = self.class.one_get_image_url(item_page)
@@ -107,7 +107,7 @@ class Product < ActiveRecord::Base
 
   def admin_create
     begin
-      item_page = self.class.create_agent.get("http://www.amazon.com/dp/#{amazon_asin_number}")
+      item_page = self.class.create_agent.get(item_url)
       self.amazon_price = self.class.one_get_price(item_page)
       self.prime = self.class.one_get_prime(item_page).present?
       self.image_url = self.class.one_get_image_url(item_page)
@@ -185,7 +185,7 @@ class Product < ActiveRecord::Base
     agent = create_agent
     Product.all.each do |product|
       begin
-        item_page = agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
+        item_page = agent.get(product.item_url)
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
         case
           when product.amazon_stock_change?(one_get_stock(item_page), notifications)
@@ -271,6 +271,11 @@ class Product < ActiveRecord::Base
   end
 
   private
+
+  def item_url
+    url_page || "http://www.amazon.com/dp/#{amazon_asin_number}"
+  end
+
   def self.create_agent
     agent = Mechanize.new do |agent|
       agent.user_agent_alias = 'Mac Safari'
