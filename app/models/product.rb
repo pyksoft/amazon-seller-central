@@ -72,7 +72,9 @@ class Product < ActiveRecord::Base
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
     notifications.each { |notification| Notification.create! notification }
 
-    %w(idanshviro@gmail.com roiekoper@gmail.com).each do |to|
+    emails_to = ['roiekoper@gmail.com']
+    emails_to <<  'idanshviro@gmail.com' if Rails.env != 'development'
+    emails_to.each do |to|
       UserMailer.send_email(Product.all.map(&:title).join(',
 '),
                             I18n.t('notifications.compare_complete',
