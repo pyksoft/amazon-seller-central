@@ -2,7 +2,6 @@ class Product < ActiveRecord::Base
   validates_uniqueness_of :ebay_item_id, :amazon_asin_number
   validates_presence_of :ebay_item_id, :amazon_asin_number
   validate :ebay_item_validation, :amazon_asin_number_validation
-  validate :prime_validation, :on => :create
 
   @@thread_compare_working = false
   @@working_count = 1
@@ -32,24 +31,18 @@ class Product < ActiveRecord::Base
 
   def amazon_asin_number_validation
     agent = self.class.create_agent
-    reason = nil
+    reasons = []
 
     begin
       item_page = agent.get(item_url)
-      reason = :ending unless self.class.in_stock?(self.class.one_get_stock(item_page))
+      reasons << :ending unless self.class.in_stock?(self.class.one_get_stock(item_page))
+      reasons << :not_prime unless self.class.one_get_prime(item_page)
     rescue
-      reason = :unknown
+      reasons << :unknown
     end
 
-    errors.add(:amazon_asin_number, reason) if reason
-  end
-
-  def prime_validation
-    begin
-      item_page = self.class.create_agent.
-          get(item_url)
-      errors.add(:amazon_asin_number, :not_prime) unless self.class.one_get_prime(item_page)
-    rescue
+    reasons.each do |reason|
+      errors.add :amazon_asin_number, reason
     end
   end
 
@@ -350,9 +343,10 @@ class Product < ActiveRecord::Base
   end
 
   def self.one_get_image_url(item_page)
-    item_page.search('.a-button-toggle').present? &&
+    image_page_url = item_page.search('.a-button-toggle').present? &&
         item_page.search('.a-button-toggle')[0].children[0].
-            children[1].children[1].attributes['src'].value.gsub('SS40', 'SL160')
+            children[1].children[1].attributes['src'].value
+    self.image_url = image_page_url[0...image_page_url =~ /_/] + '_SL160_.jpg' # remove all _SR38,50_ -> Small image
   end
 
   def self.upload_wish_list
