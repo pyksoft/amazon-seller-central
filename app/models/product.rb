@@ -346,7 +346,7 @@ class Product < ActiveRecord::Base
     image_page_url = item_page.search('.a-button-toggle').present? &&
         item_page.search('.a-button-toggle')[0].children[0].
             children[1].children[1].attributes['src'].value
-    self.image_url = image_page_url[0...image_page_url =~ /_/] + '_SL160_.jpg' # remove all _SR38,50_ -> Small image
+    image_page_url[0...image_page_url =~ /_/] + '_SL160_.jpg' # remove all _SR38,50_ -> Small image
   end
 
   def self.upload_wish_list
