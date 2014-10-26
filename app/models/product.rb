@@ -128,7 +128,7 @@ class Product < ActiveRecord::Base
     sleep(2)
 
     begin
-      while (!done || page < 10) do
+      while (!done && page < 10) do
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
 
