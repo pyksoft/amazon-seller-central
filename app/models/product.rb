@@ -128,7 +128,7 @@ class Product < ActiveRecord::Base
     sleep(2)
 
     begin
-      while (!done && page < 10) do
+      while (!done) do
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
 
@@ -145,10 +145,12 @@ class Product < ActiveRecord::Base
           YAML.load(price_html.attributes['data-item-prime-info'].value)['asin']
         end)
 
-        all_items = prices_html.zip(availability_html, products)
+        all_items = prices_html.zip(availability_html)
 
-        all_items.map do |price, stock, product|
+        all_items.map do |price, stock|
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
+          product = products.find{|pro| pro.amazon_asin_number == asin_number }
+
           done = true if all_assins.include?(asin_number)
           all_assins << asin_number
           if product
