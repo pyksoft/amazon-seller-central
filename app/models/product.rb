@@ -128,7 +128,7 @@ class Product < ActiveRecord::Base
     sleep(2)
 
     begin
-      while (!done) do
+      while (!done || page < 10) do
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
 
@@ -263,11 +263,11 @@ class Product < ActiveRecord::Base
     end
   end
 
-  private
-
   def item_url
     url_page || "http://www.amazon.com/dp/#{amazon_asin_number}"
   end
+
+  private
 
   def self.create_agent
     agent = Mechanize.new do |agent|
