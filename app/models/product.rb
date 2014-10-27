@@ -13,12 +13,6 @@ class Product < ActiveRecord::Base
             ebay_product[:item][:listing_details][:ending_reason].present?)
   end
 
-  def self.amazon_product_ending?(amazon_product)
-    !amazon_product.get_hash['Offers'].match('AvailabilityType') ||
-        %w[now futureDate].exclude?(amazon_product.get_hash['Offers'].
-                                        string_between_markers('AvailabilityType', 'AvailabilityType').delete('></'))
-  end
-
   def ebay_item_validation
     ebay_product = Ebayr.call(:GetItem, :ItemID => ebay_item_id, :auth_token => Ebayr.auth_token)
     reason = if ebay_product[:ack] == 'Failure'
@@ -60,7 +54,7 @@ class Product < ActiveRecord::Base
     p "*** #{@@working_count} ***"
 
     seconds = Benchmark.realtime do
-      notifications = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
+      notifications,extra_content = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
     end
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
     notifications.each { |notification| Notification.create! notification }
@@ -68,7 +62,7 @@ class Product < ActiveRecord::Base
     emails_to = ['roiekoper@gmail.com']
     emails_to << 'idanshviro@gmail.com' if Rails.env != 'development'
     emails_to.each do |to|
-      UserMailer.send_email(Product.all.map(&:title).join(',
+      UserMailer.send_email("#{extra_content} \n" + Product.all.map(&:title).join(',
 '),
                             I18n.t('notifications.compare_complete',
                                    :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
@@ -125,6 +119,8 @@ class Product < ActiveRecord::Base
     notifications = []
     all_assins = []
     product = nil
+    wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
+    last_page = YAML.load(wishlist.search('.a-').last.attributes['data-pag-trigger'].value)['page']
     sleep(2)
 
     begin
@@ -138,7 +134,7 @@ class Product < ActiveRecord::Base
         end
 
         p "item size: #{items.size}"
-        p "Page: #{page}"
+        p "Page: #{page} / #{last_page}"
         prices_html = items.search('.price-section')
         availability_html = items.search('.itemAvailability')
         products = Product.where(:amazon_asin_number => prices_html.map do |price_html|
@@ -149,7 +145,7 @@ class Product < ActiveRecord::Base
 
         all_items.map do |price, stock|
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
-          product = products.find{|pro| pro.amazon_asin_number == asin_number }
+          product = products.find { |pro| pro.amazon_asin_number == asin_number }
 
           done = true if all_assins.include?(asin_number)
           all_assins << asin_number
@@ -172,7 +168,13 @@ class Product < ActiveRecord::Base
                           :ebay_number => product.ebay_item_id,
                           :errors => "#{product.errors.full_messages.join(' ,')}, \n Exception errors:#{e.message}")
     end
-    notifications
+
+    extra_content = "Over on #{page} pages, out of #{last_page}"
+    if page != last_page
+      UserMailer.send_email('',extra_content,'roiekoper@gmail.com').deliver
+    end
+
+    [notifications,extra_content]
   end
 
   def self.compare_each_product
