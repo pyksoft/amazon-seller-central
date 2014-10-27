@@ -51,18 +51,20 @@ class Product < ActiveRecord::Base
   def self.compare_products
     @@thread_compare_working = true
     notifications = []
+    extra_content = nil
     p "*** #{@@working_count} ***"
 
     seconds = Benchmark.realtime do
       notifications,extra_content = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
     end
+
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
     notifications.each { |notification| Notification.create! notification }
 
     emails_to = ['roiekoper@gmail.com']
     emails_to << 'idanshviro@gmail.com' if Rails.env != 'development'
     emails_to.each do |to|
-      UserMailer.send_email("#{extra_content} \n" + Product.all.map(&:title).join(',
+      UserMailer.send_email("--- #{extra_content} \n ---   " + Product.all.map(&:title).join(',
 '),
                             I18n.t('notifications.compare_complete',
                                    :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
