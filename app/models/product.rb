@@ -6,17 +6,6 @@ class Product < ActiveRecord::Base
   @@thread_compare_working = false
   @@working_count = 1
 
-  class << self
-    def create_products_notifications
-      p 'start!'
-      unless @@thread_compare_working
-        compare_products
-      end
-    end
-
-    handle_asynchronously :create_products_notifications
-  end
-
   def self.ebay_product_ending?(ebay_product)
     ebay_product[:item].present? &&
         ((!ebay_product[:item][:listing_details][:ending_reason].present? &&
@@ -48,6 +37,14 @@ class Product < ActiveRecord::Base
 
     reasons.each do |reason|
       errors.add :amazon_asin_number, reason
+    end
+  end
+
+  def self.create_products_notifications
+    unless @@thread_compare_working
+      Thread.new do
+        compare_products
+      end
     end
   end
 
