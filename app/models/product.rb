@@ -332,6 +332,8 @@ class Product < ActiveRecord::Base
       when item_page.search('#price').present? &&
           item_page.search('#price').search('#priceblock_dealprice')
         [item_page.search('#price').search('#priceblock_dealprice').first.children[1], item_page.search('#price').search('#priceblock_dealprice')]
+      when item_page.search('#actualPriceRow')
+        [item_page.search('#actualPriceRow').search('.priceLarge'), item_page.search('#actualPriceRow')]
       else
         []
     end
@@ -343,16 +345,18 @@ class Product < ActiveRecord::Base
   end
 
   def self.one_get_stock(item_page)
-    (item_page.search('#availability_feature_div').present? &&
+    ((item_page.search('#availability_feature_div').present? &&
         item_page.search('#availability_feature_div').search('#availability').present? &&
         item_page.search('#availability_feature_div').search('#availability').
-            first.children[1].children.first.text.strip) || ''
+            first.children[1] || item_page.search('.buying').search('span')[29]).children.first.text.strip) || ''
   end
 
   def self.one_get_prime(item_page)
     match_page_price = get_match_price(item_page).last
     match_page_price.present? && (match_page_price.search('#ourprice_shippingmessage').
-        search('.a-icon-prime').present? || match_page_price.search('.a-icon-prime').present?)
+        search('.a-icon-prime').present? || match_page_price.search('.a-icon-prime').present?) ||
+        match_page_price.search('#actualPriceExtraMessaging').search('img').
+            first.attributes['src'].value.include?('check-prime')
   end
 
   def self.one_get_title(item_page)
