@@ -163,6 +163,7 @@ class Product < ActiveRecord::Base
         page += 1
       end
     rescue Exception => e
+      UserMailer.send_email("Exception errors:#{e.message}",'Exception in compare wishlist','roiekoper@gmail.com').deliver
       write_errors I18n.t('errors.diff_error',
                           :time => I18n.l(Time.now, :format => :error),
                           :id => id,
@@ -171,7 +172,7 @@ class Product < ActiveRecord::Base
                           :errors => "#{product.errors.full_messages.join(' ,')}, \n Exception errors:#{e.message}")
     end
 
-    extra_content = "Over on #{page} pages, out of #{last_page}"
+    extra_content = "Over on #{page - 1} pages, out of #{last_page}"
     if page != last_page
       UserMailer.send_email('',extra_content,'roiekoper@gmail.com').deliver
     end
