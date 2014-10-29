@@ -134,8 +134,12 @@ class Product < ActiveRecord::Base
         items = wishlist.search('.g-item-sortable')
 
         if items.empty?
-          done = true
-          break
+          if page < last_page
+            compare_wish_list
+          else
+            done = true
+            break
+          end
         end
 
         p "item size: #{items.size}"
@@ -152,7 +156,7 @@ class Product < ActiveRecord::Base
           asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
           product = products.find { |pro| pro.amazon_asin_number == asin_number }
 
-          done = true if all_assins.include?(asin_number)
+          done = true if all_assins.include?(asin_number) && page >= last_page
           all_assins << asin_number
           if product
             ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
@@ -186,6 +190,7 @@ class Product < ActiveRecord::Base
   def self.compare_each_product
     notifications = []
     agent = create_agent
+    count = 0
     Product.all.each do |product|
       begin
         item_page = agent.get(product.item_url)
@@ -197,6 +202,7 @@ class Product < ActiveRecord::Base
             product.price_change?(one_get_price(item_page), ebay_item, notifications)
             product.prime_change?(one_get_prime(item_page), notifications)
         end
+        count += 1
       rescue
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
@@ -207,6 +213,7 @@ class Product < ActiveRecord::Base
         # product.destroy!
       end
     end
+    UserMailer.send_email("Over on #{count} products / #{Product.count}", 'End Compare Each Product', 'roiekoper@gmail.com').deliver
 
     notifications
   end
