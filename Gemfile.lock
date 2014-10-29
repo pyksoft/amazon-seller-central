@@ -32,6 +32,11 @@ GEM
       ruby-hmac (~> 0.3)
     arel (5.0.1.20140414130214)
     builder (3.2.2)
+    delayed_job (4.0.4)
+      activesupport (>= 3.0, < 4.2)
+    delayed_job_active_record (4.0.2)
+      activerecord (>= 3.0, < 4.2)
+      delayed_job (>= 3.0, < 4.1)
     domain_name (0.5.19)
       unf (>= 0.0.5, < 1.0.0)
     ebayr (0.0.7)
@@ -140,6 +145,7 @@ PLATFORMS
 DEPENDENCIES
   actionmailer
   amazon-ecs
+  delayed_job_active_record
   ebayr (~> 0.0.7)
   jbuilder (~> 2.0)
   mechanize

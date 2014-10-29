@@ -47,4 +47,6 @@ Rails.application.configure do
       user_name: 'roiekoper@gmail.com',
       password: 'R01eK0per'
   }
+
+  Delayed::Worker.logger = Rails.logger
 end

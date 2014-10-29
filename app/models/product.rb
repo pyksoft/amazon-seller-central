@@ -6,6 +6,17 @@ class Product < ActiveRecord::Base
   @@thread_compare_working = false
   @@working_count = 1
 
+  class << self
+    def create_products_notifications
+      p 'start!'
+      unless @@thread_compare_working
+        compare_products
+      end
+    end
+
+    handle_asynchronously :create_products_notifications
+  end
+
   def self.ebay_product_ending?(ebay_product)
     ebay_product[:item].present? &&
         ((!ebay_product[:item][:listing_details][:ending_reason].present? &&
@@ -40,14 +51,6 @@ class Product < ActiveRecord::Base
     end
   end
 
-  def self.create_products_notifications
-    unless @@thread_compare_working
-      Thread.new do
-        compare_products
-      end
-    end
-  end
-
   def self.compare_products
     @@thread_compare_working = true
     notifications = []
@@ -55,7 +58,7 @@ class Product < ActiveRecord::Base
     p "*** #{@@working_count} ***"
 
     seconds = Benchmark.realtime do
-      notifications,extra_content = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
+      notifications, extra_content = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
     end
 
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
@@ -163,7 +166,7 @@ class Product < ActiveRecord::Base
         page += 1
       end
     rescue Exception => e
-      UserMailer.send_email("Exception errors:#{e.message}",'Exception in compare wishlist','roiekoper@gmail.com').deliver
+      UserMailer.send_email("Exception errors:#{e.message}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       write_errors I18n.t('errors.diff_error',
                           :time => I18n.l(Time.now, :format => :error),
                           :id => id,
@@ -174,10 +177,10 @@ class Product < ActiveRecord::Base
 
     extra_content = "Over on #{page - 1} pages, out of #{last_page}"
     if page != last_page
-      UserMailer.send_email('',extra_content,'roiekoper@gmail.com').deliver
+      UserMailer.send_email('', extra_content, 'roiekoper@gmail.com').deliver
     end
 
-    [notifications,extra_content]
+    [notifications, extra_content]
   end
 
   def self.compare_each_product
