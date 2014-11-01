@@ -8,7 +8,7 @@ class Product < ActiveRecord::Base
 
   class << self
     def create_products_notifications
-      p 'start!'
+      p 'start!!'
       unless @@thread_compare_working
         compare_products
       end
