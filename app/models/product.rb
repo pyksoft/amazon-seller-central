@@ -254,7 +254,7 @@ class Product < ActiveRecord::Base
       begin
         ebay_item[:item][:listing_details][:converted_start_price]
       rescue Exception => e
-        UserMailer.send_email("Exception price change?:#{e.message}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
+        UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       end
 
       # Ebayr.call(:ReviseItem,
