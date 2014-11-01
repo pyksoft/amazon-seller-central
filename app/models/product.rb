@@ -181,7 +181,7 @@ class Product < ActiveRecord::Base
     end
 
     extra_content = "Over on #{page - 1} pages, out of #{last_page}"
-    if page != last_page
+    if page - 1 != last_page
       UserMailer.send_email('', extra_content, 'roiekoper@gmail.com').deliver
     end
 
