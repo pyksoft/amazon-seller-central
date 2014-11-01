@@ -169,6 +169,7 @@ class Product < ActiveRecord::Base
         end
         page += 1
       end
+
     rescue Exception => e
       UserMailer.send_email("Exception errors:#{e.message}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       write_errors I18n.t('errors.diff_error',
@@ -347,8 +348,10 @@ class Product < ActiveRecord::Base
   def self.one_get_stock(item_page)
     ((item_page.search('#availability_feature_div').present? &&
         item_page.search('#availability_feature_div').search('#availability').present? &&
-        item_page.search('#availability_feature_div').search('#availability').
-            first.children[1] || item_page.search('.buying').search('span')[29]).children.first.text.strip) || ''
+        item_page.search('#availability_feature_div').search('#availability').first.children[1] ||
+        item_page.search('.buying') &&
+            item_page.search('.buying').search('span')[29]).children.first.text.strip) ||
+        ''
   end
 
   def self.one_get_prime(item_page)
@@ -360,14 +363,17 @@ class Product < ActiveRecord::Base
   end
 
   def self.one_get_title(item_page)
-    item_page.search('#productTitle').children.first.text.strip
+    title_element = item_page.search('#productTitle').present? && item_page.search('#productTitle') ||
+        item_page.search('#btAsinTitle').present? && item_page.search('#btAsinTitle')
+    title_element &&title_element.children.first.text.strip || ''
   end
 
   def self.one_get_image_url(item_page)
     image_page_url = item_page.search('.a-button-toggle').present? &&
         item_page.search('.a-button-toggle')[0].children[0].
-            children[1].children[1].attributes['src'].value
-    image_page_url[0...image_page_url =~ /_/] + '_SL160_.jpg' # remove all _SR38,50_ -> Small image
+            children[1].children[1].attributes['src'].value ||
+        item_page.search('#main-image').present? && item_page.search('#main-image').first.attributes['rel'].value
+    image_page_url.present? ? image_page_url[0...image_page_url =~ /_/] + '_SL160_.jpg' : '' # remove all _SR38,50_ -> Small image
   end
 
   def self.upload_wish_list
