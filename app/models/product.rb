@@ -8,7 +8,7 @@ class Product < ActiveRecord::Base
 
   class << self
     def create_products_notifications
-      p 'start!!'
+      p 'start!'
       unless @@thread_compare_working
         compare_products
       end
@@ -249,7 +249,14 @@ class Product < ActiveRecord::Base
   def price_change?(new_price, ebay_item, notifications)
     unless new_price == amazon_price
       price_change = new_price.to_f - amazon_price.to_f
-      ebay_price = ebay_item[:item][:listing_details][:converted_start_price]
+      ebay_price = ebay_item[:item] && [:listing_details] && ebay_item[:item][:listing_details][:converted_start_price] || 0
+
+      begin
+        ebay_item[:item][:listing_details][:converted_start_price]
+      rescue Exception => e
+        UserMailer.send_email("Exception price change?:#{e.message}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
+      end
+
       # Ebayr.call(:ReviseItem,
       #            :item => { :ItemID => ebay_item_id,
       #                       :StartPrice => "#{ebay_price.to_f + price_change}" },
