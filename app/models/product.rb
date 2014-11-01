@@ -4,7 +4,7 @@ class Product < ActiveRecord::Base
   validate :ebay_item_validation, :amazon_asin_number_validation
 
   @@thread_compare_working = false
-  @@working_count = 3
+  @@working_count = 2
 
   class << self
     def create_products_notifications
