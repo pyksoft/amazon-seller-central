@@ -42,6 +42,7 @@ class Product < ActiveRecord::Base
       item_page = agent.get(item_url)
       reasons << :ending unless self.class.in_stock?(self.class.one_get_stock(item_page))
       reasons << :not_prime unless self.class.one_get_prime(item_page)
+      reasons << :not_url_page unless validate_url_page
     rescue
       reasons << :unknown
     end
@@ -49,6 +50,10 @@ class Product < ActiveRecord::Base
     reasons.each do |reason|
       errors.add :amazon_asin_number, reason
     end
+  end
+
+  def validate_url_page
+    url_page && url_page.include?("#{amazon_asin_number}") || !url_page
   end
 
   def self.compare_products

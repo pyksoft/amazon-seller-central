@@ -18,6 +18,7 @@ he:
               unknown: 'שהזנת אינו תואם מוצר שברשותך'
               not_prime: 'שהזנת אינו פריים'
               ending: 'שהזנת אינו במלאי'
+              not_url_page: 'שהזנת אינו תואם את כתובת ה Amazon'
 
   errors:
     product: 'המוצר אינו נוצר, ה Amazon Asin Number לא תקין'
