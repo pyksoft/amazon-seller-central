@@ -193,6 +193,7 @@ class Product < ActiveRecord::Base
     agent = create_agent
     count = 0
     Product.all.each do |product|
+      p "over items: #{count}"
       begin
         item_page = agent.get(product.item_url)
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
@@ -365,7 +366,7 @@ class Product < ActiveRecord::Base
     match_page_price = get_match_price(item_page).last
     match_page_price.present? && (match_page_price.search('#ourprice_shippingmessage').
         search('.a-icon-prime').present? || match_page_price.search('.a-icon-prime').present?) ||
-        match_page_price.search('#actualPriceExtraMessaging').search('img').
+        match_page_price.search('#actualPriceExtraMessaging').present? && match_page_price.search('#actualPriceExtraMessaging').search('img').
             first.attributes['src'].value.include?('check-prime')
   end
 
