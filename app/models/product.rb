@@ -18,10 +18,11 @@ class Product < ActiveRecord::Base
   end
 
   def self.ebay_product_ending?(ebay_product)
-    ebay_product[:item].present? &&
+    (ebay_product[:item].present? &&
         ((!ebay_product[:item][:listing_details][:ending_reason].present? &&
             ebay_product[:item][:listing_details][:relisted_item_id].present?) ||
-            ebay_product[:item][:listing_details][:ending_reason].present?)
+            ebay_product[:item][:listing_details][:ending_reason].present?)) ||
+        !ebay_product[:item].present?
   end
 
   def ebay_item_validation
@@ -253,7 +254,7 @@ class Product < ActiveRecord::Base
   end
 
   def price_change?(new_price, ebay_item, notifications)
-    unless new_price == amazon_price
+    unless new_price == amazon_price && ebay_item[:item].present?
       price_change = new_price.to_f - amazon_price.to_f
       ebay_price = ebay_item[:item] && [:listing_details] && ebay_item[:item][:listing_details][:converted_start_price] || 0
 
