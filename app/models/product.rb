@@ -221,9 +221,11 @@ class Product < ActiveRecord::Base
         # product.destroy!
       end
     end
-    UserMailer.send_email("Over on #{count} products / #{Product.count}", 'End Compare Each Product', 'roiekoper@gmail.com').deliver
 
-    notifications
+    extra_content = "Over on #{count} products / #{Product.count}"
+    UserMailer.send_email(extra_content, 'End Compare Each Product', 'roiekoper@gmail.com').deliver
+
+    [notifications,extra_content]
   end
 
   def self.get_value(item)
