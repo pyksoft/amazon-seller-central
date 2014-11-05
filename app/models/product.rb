@@ -4,7 +4,7 @@ class Product < ActiveRecord::Base
   validate :ebay_item_validation, :amazon_asin_number_validation
 
   @@thread_compare_working = false
-  @@working_count = 2
+  @@working_count = 3
 
   class << self
     def create_products_notifications
@@ -81,7 +81,7 @@ class Product < ActiveRecord::Base
                                    :work_time => "#{Time.at(seconds).gmtime.strftime('%R:%S')}"),
                             to).deliver
     end
-    @@working_count += 1
+    # @@working_count += 1
     @@thread_compare_working = false
   end
 
