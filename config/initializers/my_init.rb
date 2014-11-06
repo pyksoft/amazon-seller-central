@@ -10,8 +10,6 @@ Amazon::Ecs.options = {
     :AWS_secret_key => AWS_SECRET_ACCESS_KEY
 }
 
-
-
 class Hash
   def diff(other)
     (self.keys + other.keys).uniq.inject({}) do |memo, key|

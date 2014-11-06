@@ -225,7 +225,7 @@ class Product < ActiveRecord::Base
     extra_content = "Over on #{count} products / #{Product.count}"
     UserMailer.send_email(extra_content, 'End Compare Each Product', 'roiekoper@gmail.com').deliver
 
-    [notifications,extra_content]
+    [notifications, extra_content]
   end
 
   def self.get_value(item)
@@ -362,11 +362,12 @@ class Product < ActiveRecord::Base
   end
 
   def self.one_get_stock(item_page)
-    ((item_page.search('#availability_feature_div').present? &&
-        item_page.search('#availability_feature_div').search('#availability').present? &&
-        item_page.search('#availability_feature_div').search('#availability').first.children[1] ||
+    (item_page.search('#availability_feature_div').present? &&
+        (item_page.search('#availability_feature_div').search('#availability').present? &&
+            item_page.search('#availability_feature_div').search('#availability').first.children[1]
+        ).children.first.text.strip) ||
         item_page.search('.buying') &&
-            item_page.search('.buying').search('span')[29]).children.first.text.strip) ||
+            item_page.search('.buying').search('span').to_s ||
         ''
   end
 
