@@ -10,11 +10,11 @@ class Product < ActiveRecord::Base
     def create_products_notifications
       p 'start!'
       unless @@thread_compare_working
-        compare_products
+        Thread.new do
+          compare_products
+        end
       end
     end
-
-    handle_asynchronously :create_products_notifications
   end
 
   def self.ebay_product_ending?(ebay_product)
