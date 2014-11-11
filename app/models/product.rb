@@ -198,16 +198,11 @@ class Product < ActiveRecord::Base
     notifications = []
     agent = create_agent
     count = 0
-    Product.all.limit(150).each do |product|
+    Product.all.each do |product|
       p "over items: #{count}"
       begin
         item_page = agent.get(product.item_url)
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-        p "#{product.amazon_asin_number}, #{product.ebay_item_id}, #{product.id}"
-        p one_get_stock(item_page)
-        p in_stock?(one_get_stock(item_page))
-        p one_get_price(item_page)
-        p one_get_prime(item_page)
 
         case
           when product.amazon_stock_change?(one_get_stock(item_page), notifications)
@@ -368,10 +363,9 @@ class Product < ActiveRecord::Base
   end
 
   def self.one_get_stock(item_page)
-    (item_page.search('#availability_feature_div').present? &&
-        (item_page.search('#availability_feature_div').search('#availability').present? &&
-            item_page.search('#availability_feature_div').search('#availability').first.children[1]
-        ).children.first.text.strip) ||
+    item_page.search('#availability_feature_div').present? &&
+        item_page.search('#availability_feature_div').search('#availability').present? &&
+        item_page.search('#availability_feature_div').search('#availability').first.children[1].children.first.text.strip ||
         item_page.search('.buying') &&
             item_page.search('.buying').search('span').to_s ||
         ''
