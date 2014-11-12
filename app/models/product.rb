@@ -203,6 +203,11 @@ class Product < ActiveRecord::Base
       begin
         item_page = agent.get(product.item_url)
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
+        p "#{product.amazon_asin_number}, #{product.ebay_item_id}, #{product.id}"
+        p "Amazon stock: #{one_get_stock(item_page)}"
+        p "Amazon In Stock? #{in_stock?(one_get_stock(item_page))}"
+        p "Price: #{one_get_price(item_page)}"
+        p "Prime: #{one_get_prime(item_page)}"
 
         case
           when product.amazon_stock_change?(one_get_stock(item_page), notifications)
