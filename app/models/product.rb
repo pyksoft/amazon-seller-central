@@ -198,16 +198,14 @@ class Product < ActiveRecord::Base
     notifications = []
     agent = create_agent
     count = 0
+    log = []
+
     Product.all.each do |product|
       p "Over items: #{count}"
       begin
         item_page = agent.get(product.item_url)
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-        p "#{product.amazon_asin_number}, #{product.ebay_item_id}, #{product.id}"
-        p "Amazon stock: #{one_get_stock(item_page)}"
-        p "Amazon In Stock? #{in_stock?(one_get_stock(item_page))}"
-        p "Price: #{one_get_price(item_page)}"
-        p "Prime: #{one_get_prime(item_page)}"
+        log << "amazon_asin_number: #{product.amazon_asin_number},ebay_item_id: #{product.ebay_item_id},id: #{product.id}, Amazon stock: #{one_get_stock(item_page)}, Amazon In Stock? #{in_stock?(one_get_stock(item_page))}, Price: #{one_get_price(item_page)}, Prime: #{one_get_prime(item_page)}"
 
         case
           when product.amazon_stock_change?(one_get_stock(item_page), notifications)
@@ -229,7 +227,7 @@ class Product < ActiveRecord::Base
     end
 
     extra_content = "Over on #{count} products / #{Product.count}"
-    UserMailer.send_email(extra_content, 'End Compare Each Product', 'roiekoper@gmail.com').deliver
+    UserMailer.send_email(extra_content + ' '.center(80) + log, 'End Compare Each Product', 'roiekoper@gmail.com').deliver
 
     [notifications, extra_content]
   end
@@ -272,10 +270,10 @@ class Product < ActiveRecord::Base
         UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       end
 
-      # Ebayr.call(:ReviseItem,
-      #            :item => { :ItemID => ebay_item_id,
-      #                       :StartPrice => "#{ebay_price.to_f + price_change}" },
-      #            :auth_token => Ebayr.auth_token)
+      Ebayr.call(:ReviseItem,
+                 :item => { :ItemID => ebay_item_id,
+                            :StartPrice => "#{ebay_price.to_f + price_change}" },
+                 :auth_token => Ebayr.auth_token)
 
       notifications << { :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
                                          :amazon_new_price => self.class.show_price(new_price),
