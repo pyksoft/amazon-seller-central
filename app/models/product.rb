@@ -199,7 +199,7 @@ class Product < ActiveRecord::Base
     agent = create_agent
     count = 0
     Product.all.each do |product|
-      p "over items: #{count}"
+      p "Over items: #{count}"
       begin
         item_page = agent.get(product.item_url)
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
