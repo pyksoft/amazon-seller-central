@@ -227,7 +227,7 @@ class Product < ActiveRecord::Base
     end
 
     extra_content = "Over on #{count} products / #{Product.count}"
-    UserMailer.send_email(extra_content + ' '.center(80) + log, 'End Compare Each Product', 'roiekoper@gmail.com').deliver
+    UserMailer.send_email(extra_content + ' '.center(80) + log.join(' '.center(15)), 'End Compare Each Product', 'roiekoper@gmail.com').deliver
 
     [notifications, extra_content]
   end
