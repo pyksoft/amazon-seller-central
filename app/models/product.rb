@@ -256,7 +256,7 @@ class Product < ActiveRecord::Base
                          :image_url => image_url,
                          :change_title => 'ebay_unavailable' }
     end
-    # destroy!
+    destroy!
   end
 
   def price_change?(new_price, ebay_item, notifications)
