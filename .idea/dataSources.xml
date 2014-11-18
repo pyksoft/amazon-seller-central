@@ -17,10 +17,7 @@
       <driver-ref>postgresql</driver-ref>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://127.0.0.1/amazon_seller_central_production</jdbc-url>
-      <user-name>amazon_seller_central</user-name>
-      <user-password>df96df8fdf97df8adfefdfe4dffcdff1df8ddfebdfe7dfebdff0dfe5dfe4dff5dff9dfefdfe6dfe6dfefdff8dff5dfe9dfefdfe4dffedff8dfebdfe6dff5dfeedfebdffedfebdfe8dfebdff9dfefdff5dffadfebdff9dff9dffddfe5dff8dfeedf8ddff7df8adf8fdf94</user-password>
       <libraries />
     </data-source>
   </component>
 </project>
-
