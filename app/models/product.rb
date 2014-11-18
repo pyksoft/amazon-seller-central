@@ -96,7 +96,7 @@ class Product < ActiveRecord::Base
         save!
         { :msg => I18n.t('messages.product_create') }
       else
-        { :errs => errors.full_messages }
+        { :errs => errors.full_messages.join(', ') }
       end
     rescue Exception => e
       { :errs => e.message }
