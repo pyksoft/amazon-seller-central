@@ -11,7 +11,7 @@ class Product < ActiveRecord::Base
     @@test_workspace
   end
 
-  def self.test_workspace=status
+  def self.test_workspace= status
     @@test_workspace = status
   end
 
@@ -19,7 +19,7 @@ class Product < ActiveRecord::Base
     @@working_count
   end
 
-  def self.working_count=n
+  def self.working_count= n
     @@working_count = n
   end
 
@@ -181,11 +181,9 @@ class Product < ActiveRecord::Base
           all_assins << asin_number
           if product
             ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-            case
-              when product.amazon_stock_change?(get_value(stock), notifications)
-              when product.ebay_stock_change(ebay_item, notifications)
-              when product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
-            end
+            product.amazon_stock_change?(get_value(stock), notifications)
+            product.ebay_stock_change(ebay_item, notifications)
+            product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
           end
         end
         page += 1
@@ -215,20 +213,17 @@ class Product < ActiveRecord::Base
     count = 0
     log = []
 
-    Product.limit(500).all.each do |product|
+    Product.limit(600).all.each do |product|
       p "Over items: #{count}"
       begin
         item_page = agent.get(product.item_url)
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
         log << "amazon_asin_number: #{product.amazon_asin_number},ebay_item_id: #{product.ebay_item_id},id: #{product.id}, Amazon stock: #{one_get_stock(item_page)}, Amazon In Stock? #{in_stock?(one_get_stock(item_page))}, Price: #{one_get_price(item_page)}, Prime: #{one_get_prime(item_page)}"
 
-        case
-          when product.amazon_stock_change?(one_get_stock(item_page), notifications)
-          when product.ebay_stock_change(ebay_item, notifications)
-          else
-            product.price_change?(one_get_price(item_page), ebay_item, notifications)
-            product.prime_change?(one_get_prime(item_page), notifications)
-        end
+        product.amazon_stock_change?(one_get_stock(item_page), notifications)
+        product.ebay_stock_change(ebay_item, notifications)
+        product.price_change?(one_get_price(item_page), ebay_item, notifications)
+        product.prime_change?(one_get_prime(item_page), notifications)
         count += 1
       rescue
         notifications << {
