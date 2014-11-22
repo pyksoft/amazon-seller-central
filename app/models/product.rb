@@ -3,7 +3,7 @@ class Product < ActiveRecord::Base
   validates_presence_of :ebay_item_id, :amazon_asin_number
   validate :ebay_item_validation, :amazon_asin_number_validation
 
-  @@test_workspace = Rails.env == 'development'
+  @@test_workspace = true || Rails.env == 'development'
   @@thread_compare_working = false
   @@working_count = 3
 
@@ -13,6 +13,14 @@ class Product < ActiveRecord::Base
 
   def self.test_workspace=status
     @@test_workspace = status
+  end
+
+  def self.working_count
+    @@working_count
+  end
+
+  def self.working_count=n
+    @@working_count = n
   end
 
   def self.create_products_notifications
@@ -207,7 +215,7 @@ class Product < ActiveRecord::Base
     count = 0
     log = []
 
-    Product.all.each do |product|
+    Product.limit(300).all.each do |product|
       p "Over items: #{count}"
       begin
         item_page = agent.get(product.item_url)
