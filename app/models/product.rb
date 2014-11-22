@@ -3,7 +3,7 @@ class Product < ActiveRecord::Base
   validates_presence_of :ebay_item_id, :amazon_asin_number
   validate :ebay_item_validation, :amazon_asin_number_validation
 
-  @@test_workspace = true || Rails.env == 'development'
+  @@test_workspace = Rails.env == 'development'
   @@thread_compare_working = false
   @@working_count = 3
 
@@ -272,7 +272,7 @@ class Product < ActiveRecord::Base
   def price_change?(new_price, ebay_item, notifications)
     unless new_price == amazon_price && ebay_item[:item].present?
       price_change = new_price.to_f - amazon_price.to_f
-      ebay_price = ebay_item[:item] && [:listing_details] && ebay_item[:item][:listing_details][:converted_start_price] || 0
+      ebay_price = ebay_item[:item] && ebay_item[:item][:listing_details] && ebay_item[:item][:listing_details][:converted_start_price] || 0
 
       begin
         ebay_item[:item][:listing_details][:converted_start_price]
