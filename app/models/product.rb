@@ -220,11 +220,14 @@ class Product < ActiveRecord::Base
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
         log << "amazon_asin_number: #{product.amazon_asin_number},ebay_item_id: #{product.ebay_item_id},id: #{product.id}, Amazon stock: #{one_get_stock(item_page)}, Amazon In Stock? #{in_stock?(one_get_stock(item_page))}, Price: #{one_get_price(item_page)}, Prime: #{one_get_prime(item_page)}"
 
-        product.amazon_stock_change?(one_get_stock(item_page), notifications)
-        product.ebay_stock_change(ebay_item, notifications)
-        product.price_change?(one_get_price(item_page), ebay_item, notifications)
-        product.prime_change?(one_get_prime(item_page), notifications)
-        count += 1
+        if ebay_item[:ack] == 'Failure'
+          UserMailer.send_email("Exception in ebay call: #{ebay_item}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
+        else
+          product.amazon_stock_change?(one_get_stock(item_page), notifications)
+          product.ebay_stock_change(ebay_item, notifications)
+          product.price_change?(one_get_price(item_page), ebay_item, notifications)
+          product.prime_change?(one_get_prime(item_page), notifications)
+        end
       rescue
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
@@ -234,6 +237,9 @@ class Product < ActiveRecord::Base
         }
         # product.destroy!
       end
+
+      count += 1
+
     end
 
     extra_content = "Over on #{count} products / #{Product.count}"
