@@ -1,7 +1,7 @@
 class Product < ActiveRecord::Base
   validates_uniqueness_of :ebay_item_id, :amazon_asin_number
   validates_presence_of :ebay_item_id, :amazon_asin_number
-  validate :ebay_item_validation, :amazon_asin_number_validation
+  # validate :ebay_item_validation, :amazon_asin_number_validation
 
   @@test_workspace = Rails.env == 'development'
   @@thread_compare_working = false
