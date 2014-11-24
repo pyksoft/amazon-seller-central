@@ -220,8 +220,12 @@ class Product < ActiveRecord::Base
         ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
         log << "amazon_asin_number: #{product.amazon_asin_number},ebay_item_id: #{product.ebay_item_id},id: #{product.id}, Amazon stock: #{one_get_stock(item_page)}, Amazon In Stock? #{in_stock?(one_get_stock(item_page))}, Price: #{one_get_price(item_page)}, Prime: #{one_get_prime(item_page)}"
 
+        if item_page.body.include?('dcq_question_subjective_1')
+          UserMailer.send_email("Exception in item page: #{item_page}, product: #{product.attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
+        end
+
         if ebay_item[:ack] == 'Failure'
-          UserMailer.send_email("Exception in ebay call: #{ebay_item}, product: #{product.attributes.slice(:id,:ebay_item_id,:amazon_asin_number)}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
+          UserMailer.send_email("Exception in ebay call: #{ebay_item}, product: #{product.attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
         else
           product.amazon_stock_change?(one_get_stock(item_page), notifications)
           product.ebay_stock_change(ebay_item, notifications)
