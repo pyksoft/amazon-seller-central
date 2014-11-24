@@ -221,7 +221,7 @@ class Product < ActiveRecord::Base
         log << "amazon_asin_number: #{product.amazon_asin_number},ebay_item_id: #{product.ebay_item_id},id: #{product.id}, Amazon stock: #{one_get_stock(item_page)}, Amazon In Stock? #{in_stock?(one_get_stock(item_page))}, Price: #{one_get_price(item_page)}, Prime: #{one_get_prime(item_page)}"
 
         if ebay_item[:ack] == 'Failure'
-          UserMailer.send_email("Exception in ebay call: #{ebay_item}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
+          UserMailer.send_email("Exception in ebay call: #{ebay_item}, product: #{product.attributes.slice(:id,:ebay_item_id,:amazon_asin_number)}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
         else
           product.amazon_stock_change?(one_get_stock(item_page), notifications)
           product.ebay_stock_change(ebay_item, notifications)
@@ -286,12 +286,12 @@ class Product < ActiveRecord::Base
         UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       end
 
-      unless @@test_workspace
-        Ebayr.call(:ReviseItem,
-                   :item => { :ItemID => ebay_item_id,
-                              :StartPrice => "#{ebay_price.to_f + price_change}" },
-                   :auth_token => Ebayr.auth_token)
-      end
+      # unless @@test_workspace
+      #   Ebayr.call(:ReviseItem,
+      #              :item => { :ItemID => ebay_item_id,
+      #                         :StartPrice => "#{ebay_price.to_f + price_change}" },
+      #              :auth_token => Ebayr.auth_token)
+      # end
 
       notifications << { :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
                                          :amazon_new_price => self.class.show_price(new_price),
