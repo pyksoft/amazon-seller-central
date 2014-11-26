@@ -24,7 +24,7 @@ class ProductsController < ApplicationController
   def create_product
     response = Product.new(params.permit(:amazon_asin_number, :ebay_item_id, :url_page).
                                slice(:amazon_asin_number, :ebay_item_id).
-                               inject({}) { |h, (k, v)| h.merge(k => v.upcase) }.
+                               inject({}) { |h, (k, v)| h.merge(k => v.strip.upcase) }.
                                merge(params.slice(:url_page))).create_with_requests
     render({ :json => (response) })
   end
