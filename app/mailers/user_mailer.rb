@@ -10,4 +10,14 @@ class UserMailer < ActionMailer::Base
         content_type: 'text/html'
     )
   end
+
+
+  def send_html_email(content,title,to)
+    mail(
+        body: content,
+        subject: title,
+        to: to,
+        content_type: 'text/html'
+    )
+  end
 end

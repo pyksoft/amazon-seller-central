@@ -224,6 +224,10 @@ class Product < ActiveRecord::Base
           UserMailer.send_email("Exception in item page: #{item_page}, product: #{product.attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
         end
 
+        unless in_stock?(one_get_stock(item_page))
+          UserMailer.send_html_email(item_page.search('#centerCol').to_s,"Product #{product.amazon_asin_number} unavailable, show html file",'roiekoper@gmail.com').deliver
+        end
+
         if ebay_item[:ack] == 'Failure'
           UserMailer.send_email("Exception in ebay call: #{ebay_item}, product: #{product.attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
         else
