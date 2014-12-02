@@ -240,9 +240,8 @@ class Product < ActiveRecord::Base
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
             :product => product,
-            :image_url => product.image_url,
             :change_title => :unknown_item
-        }
+        }.merge(product.attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
         # product.destroy!
       end
 
@@ -267,8 +266,8 @@ class Product < ActiveRecord::Base
       #            :EndingReason => 'NotAvailable')
       notifications << { :text => I18n.t('notifications.amazon_ending', :title => title),
                          :product => self,
-                         :image_url => image_url,
-                         :change_title => 'amazon_unavailable' }
+                         :change_title => 'amazon_unavailable' }.
+          merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
       # destroy!
     end
   end
@@ -277,8 +276,8 @@ class Product < ActiveRecord::Base
     if self.class.ebay_product_ending?(ebay_item)
       notifications << { :text => I18n.t('notifications.ebay_ending', :title => title),
                          :product => self,
-                         :image_url => image_url,
-                         :change_title => 'ebay_unavailable' }
+                         :change_title => 'ebay_unavailable' }.
+          merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
       destroy! unless @@test_workspace
     end
   end
@@ -306,9 +305,8 @@ class Product < ActiveRecord::Base
                                          :ebay_old_price => self.class.show_price(ebay_price),
                                          :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
                          :product => self,
-                         :image_url => image_url,
                          :change_title => "#{price_change.round(2)}_price"
-      }
+      }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
 
       update_attribute(:amazon_price, self.class.show_price(new_price)) unless @@test_workspace
     end
@@ -321,9 +319,9 @@ class Product < ActiveRecord::Base
                                                                              I18n.t(val.to_s, :scope => :app)
                                                                            end)]),
                          :product => self,
-                         :image_url => image_url,
                          :row_css => new_prime ? 'green_prime' : 'red_prime',
-                         :change_title => "#{new_prime}_prime" }
+                         :change_title => "#{new_prime}_prime" }.
+          merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
       # update_attribute :prime, new_prime
     end
   end
