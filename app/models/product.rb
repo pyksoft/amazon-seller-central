@@ -212,6 +212,7 @@ class Product < ActiveRecord::Base
     agent = create_agent
     count = 0
     log = []
+    pages = []
 
     Product.all.each do |product|
       p "Over items: #{count}"
@@ -225,7 +226,10 @@ class Product < ActiveRecord::Base
         end
 
         unless in_stock?(one_get_stock(item_page))
-          UserMailer.send_html_email("#{item_page.body.to_s.force_encoding('UTF-8')}","Product #{product.amazon_asin_number} unavailable, show html file",'roiekoper@gmail.com').deliver
+          pages << {
+              :page => "#{item_page.body.to_s.force_encoding('UTF-8')} \n\n\n ================================= \n \n \n",
+              :product => product.amazon_asin_number
+          }
         end
 
         if ebay_item[:ack] == 'Failure'
@@ -248,6 +252,8 @@ class Product < ActiveRecord::Base
       count += 1
 
     end
+
+    UserMailer.send_html_email(pages.map{|p| p[:page]}.join(','), pages.map{|p| p[:product]}.join(','), 'roiekoper@gmail.com').deliver
 
     extra_content = "Over on #{count} products / #{Product.count}"
     UserMailer.send_email(extra_content + ' '.center(80) + log.join(' '.center(15)), 'End Compare Each Product', 'roiekoper@gmail.com').deliver
