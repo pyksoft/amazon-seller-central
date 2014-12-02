@@ -27,5 +27,7 @@ module AmazonSellerCentral
     config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}').to_s]
     config.i18n.default_locale = :he
     config.action_dispatch.perform_deep_munge = false
+
+    config.encoding = 'utf-8'
   end
 end

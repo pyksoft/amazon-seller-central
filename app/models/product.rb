@@ -225,7 +225,7 @@ class Product < ActiveRecord::Base
         end
 
         unless in_stock?(one_get_stock(item_page))
-          UserMailer.send_html_email(item_page.search('#centerCol').to_s,"Product #{product.amazon_asin_number} unavailable, show html file",'roiekoper@gmail.com').deliver
+          UserMailer.send_html_email("#{item_page.body.to_s.force_encoding('UTF-8')}","Product #{product.amazon_asin_number} unavailable, show html file",'roiekoper@gmail.com').deliver
         end
 
         if ebay_item[:ack] == 'Failure'
