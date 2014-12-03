@@ -225,7 +225,7 @@ class Product < ActiveRecord::Base
           UserMailer.send_email("Exception in item page: #{item_page}, product: #{product.attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
         end
 
-        unless in_stock?(one_get_stock(item_page))
+        if !in_stock?(one_get_stock(item_page)) && !one_get_stock(item_page).present?
           pages << {
               :page => "#{item_page.body.to_s.force_encoding('UTF-8')} \n\n\n ================================= \n \n \n",
               :product => product.amazon_asin_number
