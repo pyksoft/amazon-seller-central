@@ -5,7 +5,7 @@ class Product < ActiveRecord::Base
 
   @@test_workspace = Rails.env == 'development'
   @@thread_compare_working = false
-  @@working_count = 3
+  @@working_count = 0
 
   def self.test_workspace
     @@test_workspace
@@ -79,7 +79,7 @@ class Product < ActiveRecord::Base
     p "*** #{@@working_count} ***"
 
     seconds = Benchmark.realtime do
-      notifications, extra_content = @@working_count % 3 == 0 ? compare_each_product : compare_wish_list
+      notifications, extra_content = @@working_count % 2 == 0 ? compare_each_product : compare_wish_list
     end
 
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
@@ -88,15 +88,14 @@ class Product < ActiveRecord::Base
     emails_to = ['roiekoper@gmail.com']
     emails_to << 'idanshviro@gmail.com' unless @@test_workspace
     emails_to.each do |to|
-      UserMailer.send_email("--- #{extra_content} \n ---   " + Product.all.map(&:title).join(',
-'),
+      UserMailer.send_email("--- #{extra_content} \n ---, Checking no': #{@@working_count}",
                             I18n.t('notifications.compare_complete',
                                    :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
                                    :new_notifications_count => notifications.size,
                                    :work_time => "#{Time.at(seconds).gmtime.strftime('%R:%S')}"),
                             to).deliver
     end
-    # @@working_count += 1
+    @@working_count += 1
     @@thread_compare_working = false
   end
 
@@ -253,7 +252,9 @@ class Product < ActiveRecord::Base
 
     end
 
-    UserMailer.send_html_email(pages.map{|p| p[:page]}.join(','), pages.map{|p| p[:product]}.join(','), 'roiekoper@gmail.com').deliver
+    if pages.present?
+      UserMailer.send_html_email(pages.map { |p| p[:page] }.join(','), pages.map { |p| p[:product] }.join(','), 'roiekoper@gmail.com').deliver
+    end
 
     extra_content = "Over on #{count} products / #{Product.count}"
     UserMailer.send_email(extra_content + ' '.center(80) + log.join(' '.center(15)), 'End Compare Each Product', 'roiekoper@gmail.com').deliver
