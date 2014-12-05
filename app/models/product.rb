@@ -87,7 +87,7 @@ class Product < ActiveRecord::Base
 
     emails_to = ['roiekoper@gmail.com']
     emails_to << 'idanshviro@gmail.com' unless @@test_workspace
-    UserMailer.send_email(emails_to.join(', ') + ', ' + notifications.size.to_s + ', ' + extra_content.to_s,'Test','roiekoper@gmail.com').deliver
+    UserMailer.send_email(emails_to.join(', ') + ', ' + notifications.size.to_s + ', ' + extra_content.to_s + ', ' + @@working_count.to_s,'Test','roiekoper@gmail.com').deliver
     emails_to.each do |to|
       UserMailer.send_email("--- #{extra_content} \n ---, Checking no': #{@@working_count}",
                             I18n.t('notifications.compare_complete',
