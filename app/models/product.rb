@@ -5,7 +5,7 @@ class Product < ActiveRecord::Base
 
   @@test_workspace = Rails.env == 'development'
   @@thread_compare_working = false
-  @@working_count = 0
+  @@working_count = 1
 
   def self.test_workspace
     @@test_workspace
