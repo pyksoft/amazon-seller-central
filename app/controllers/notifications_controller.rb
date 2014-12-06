@@ -14,9 +14,12 @@ class NotificationsController < ApplicationController
   end
 
   def change_accepted
-    id = params.permit(:id)[:id]
-    response = if id.present?
-                 Notification.find(id).change_accepted
+    notification = Notification.find_by_id(params.permit(:id)[:id])
+    p '____________________'
+    p notification
+    p '____________________'
+    response = if notification
+                 notification.change_accepted
                else
                  { :errs => I18n.t('messages.not_exists_notifications') }
                end
