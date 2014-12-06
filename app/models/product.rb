@@ -191,14 +191,14 @@ class Product < ActiveRecord::Base
     rescue Exception => e
       UserMailer.send_email("Exception errors:#{e.message}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       write_errors I18n.t('errors.diff_error',
-                          :time => I18n.l(Time.now, :format => :error),
+                          :time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :error),
                           :id => product.id,
                           :asin_number => product.amazon_asin_number,
                           :ebay_number => product.ebay_item_id,
                           :errors => "#{product.errors.full_messages.join(' ,')}, \n Exception errors:#{e.message}")
     end
 
-    extra_content = "Over on #{page - 1} pages, out of #{last_page}"
+    extra_content = "Over on #{(page - 1)} pages, out of #{last_page}"
     if page - 1 != last_page
       UserMailer.send_email('', extra_content, 'roiekoper@gmail.com').deliver
     end
@@ -405,7 +405,7 @@ class Product < ActiveRecord::Base
 
   def self.in_stock?(stock)
     ['In Stock', 'left in stock--order soon', 'left in stock'].any? do |instock_str|
-      stock.downcase.match(/^(.*?(\b#{instock_str.downcase}\b)[^$]*)$/)
+      stock.to_s.downcase.match(/^(.*?(\b#{instock_str.downcase}\b)[^$]*)$/)
     end
   end
 
