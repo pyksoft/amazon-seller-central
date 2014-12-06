@@ -343,9 +343,11 @@ class Product < ActiveRecord::Base
 
   def change_price(changed)
     unless @@test_workspace
+      ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
+      ebay_price = ebay_item[:item] && ebay_item[:item][:listing_details] && ebay_item[:item][:listing_details][:converted_start_price] || 0
       Ebayr.call(:ReviseItem,
                  :item => { :ItemID => ebay_item_id,
-                            :StartPrice => "#{amazon_price - changed}" },
+                            :StartPrice => "#{ebay_price.to_f + changed}" },
                  :auth_token => Ebayr.auth_token)
     end
   end
