@@ -26,9 +26,6 @@ class Notification < ActiveRecord::Base
   end
 
   def change_accepted
-    p '____________________'
-    p product
-    p '____________________'
     if product
       result = product.change_accepted(change_title)
       destroy! unless result[:errs].present?

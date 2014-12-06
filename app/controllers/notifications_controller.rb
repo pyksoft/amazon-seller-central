@@ -15,9 +15,6 @@ class NotificationsController < ApplicationController
 
   def change_accepted
     notification = Notification.find_by_id(params.permit(:id)[:id])
-    p '____________________'
-    p notification
-    p '____________________'
     response = if notification
                  notification.change_accepted
                else
