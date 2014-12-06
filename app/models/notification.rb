@@ -24,4 +24,14 @@ class Notification < ActiveRecord::Base
       end
     end + sorted_notifications
   end
+
+  def change_accepted
+    if product
+      result = product.change_accepted(change_title)
+      destroy! unless result[:errs].present?
+      result
+    else
+      { :errs => I18n.t('messages.not_exists_product') }
+    end
+  end
 end

@@ -12,4 +12,14 @@ class NotificationsController < ApplicationController
     @notifications = Notification.sorted_notifications
     respond_with(@notifications)
   end
+
+  def change_accepted
+    id = params.permit(:id)[:id]
+    response = if id.present?
+                 Notification.find(id).change_accepted
+               else
+                 { :errs => I18n.t('messages.not_exists_notifications') }
+               end
+    render({ :json => response})
+  end
 end

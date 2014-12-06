@@ -29,6 +29,10 @@ class ActiveRecord::Base
   def serializable_attributes
     HashWithIndifferentAccess.new attributes
   end
+
+  def values_at(attrs)
+    serializable_attributes.slice(*attrs)
+  end
 end
 
 class String

@@ -87,7 +87,6 @@ class Product < ActiveRecord::Base
 
     emails_to = ['roiekoper@gmail.com']
     emails_to << 'idanshviro@gmail.com' unless @@test_workspace
-    UserMailer.send_email(emails_to.join(', ') + ', ' + notifications.size.to_s + ', ' + extra_content.to_s + ', ' + @@working_count.to_s,'Test','roiekoper@gmail.com').deliver
     emails_to.each do |to|
       UserMailer.send_email("--- #{extra_content} \n ---, Checking no': #{@@working_count}",
                             I18n.t('notifications.compare_complete',
@@ -150,7 +149,7 @@ class Product < ActiveRecord::Base
     sleep(2)
 
     begin
-      while (!done) do
+      while (!done && page <= 5) do
         wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
 
@@ -269,14 +268,10 @@ class Product < ActiveRecord::Base
 
   def amazon_stock_change?(stock, notifications)
     unless self.class.in_stock?(stock)
-      # Ebayr.call(:EndItem, :ItemID => ebay_item_id,
-      #            :auth_token => Ebayr.auth_token,
-      #            :EndingReason => 'NotAvailable')
       notifications << { :text => I18n.t('notifications.amazon_ending', :title => title),
                          :product => self,
                          :change_title => 'amazon_unavailable' }.
           merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
-      # destroy!
     end
   end
 
@@ -286,7 +281,6 @@ class Product < ActiveRecord::Base
                          :product => self,
                          :change_title => 'ebay_unavailable' }.
           merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
-      destroy! unless @@test_workspace
     end
   end
 
@@ -300,13 +294,6 @@ class Product < ActiveRecord::Base
       rescue Exception => e
         UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       end
-
-      # unless @@test_workspace
-      #   Ebayr.call(:ReviseItem,
-      #              :item => { :ItemID => ebay_item_id,
-      #                         :StartPrice => "#{ebay_price.to_f + price_change}" },
-      #              :auth_token => Ebayr.auth_token)
-      # end
 
       notifications << { :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
                                          :amazon_new_price => self.class.show_price(new_price),
@@ -330,7 +317,6 @@ class Product < ActiveRecord::Base
                          :row_css => new_prime ? 'green_prime' : 'red_prime',
                          :change_title => "#{new_prime}_prime" }.
           merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
-      # update_attribute :prime, new_prime
     end
   end
 
@@ -338,6 +324,53 @@ class Product < ActiveRecord::Base
     url_page || "http://www.amazon.com/dp/#{amazon_asin_number}"
   end
 
+  def amazon_out_of_stock
+    unless @@test_workspace
+      Ebayr.call(:EndItem, :ItemID => ebay_item_id,
+                 :auth_token => Ebayr.auth_token,
+                 :EndingReason => 'NotAvailable')
+      destroy!
+    end
+  end
+
+  def ebay_out_of_stock
+    destroy! unless @@test_workspace
+  end
+
+  def change_prime(new_prime)
+    update_attribute(:prime, new_prime) unless @@test_workspace
+  end
+
+  def change_price(changed)
+    unless @@test_workspace
+      Ebayr.call(:ReviseItem,
+                 :item => { :ItemID => ebay_item_id,
+                            :StartPrice => "#{amazon_price - changed}" },
+                 :auth_token => Ebayr.auth_token)
+    end
+  end
+
+  def change_accepted(change_title)
+    begin
+      case change_title
+        when /amazon_unavailable/
+          amazon_out_of_stock
+        when /ebay_unavailable/
+          ebay_out_of_stock
+        when /prime/
+          change_prime(change_title.gsub('_prime', '') == 'true')
+        when /price/
+          change_price(change_title.gsub('_price', '').to_f)
+      end
+
+      { :msg => I18n.t('messages.notification_accepted') }
+    rescue Exception => e
+      { :errs => e.message }
+    end
+  end
+
+  # ----------------------
+  # ----------------------
   private
 
   def self.create_agent
