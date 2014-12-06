@@ -346,11 +346,11 @@ class Product < ActiveRecord::Base
       ebay_item = Ebayr.call(:GetItem, :ItemID => ebay_item_id,
                              :auth_token => Ebayr.auth_token)
       ebay_price = ebay_item[:item] && ebay_item[:item][:listing_details] &&
-          ebay_item[:item][:listing_details][:converted_start_price] || 0
+          ebay_item[:item][:listing_details][:converted_start_price].to_f || 0
       if ebay_price.nonzero?
         Ebayr.call(:ReviseItem,
                    :item => { :ItemID => ebay_item_id,
-                              :StartPrice => "#{ebay_price.to_f + changed}" },
+                              :StartPrice => "#{ebay_price + changed}" },
                    :auth_token => Ebayr.auth_token)
       end
     end
