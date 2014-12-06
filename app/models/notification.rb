@@ -7,7 +7,7 @@ class Notification < ActiveRecord::Base
     sorted_notifications = unseen_notifications.select do |notification|
       notification.change_title && notification.change_title.include?('price')
     end.sort_by do |notification|
-      notification.change_title.delete('_price').to_f
+      notification.change_title.delete('_price').to_f.abs
     end.reverse
     (unseen_notifications - sorted_notifications).sort_by do |notification|
       case notification.change_title
