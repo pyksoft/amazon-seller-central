@@ -85,6 +85,7 @@ class Product < ActiveRecord::Base
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
     notifications.each { |notification| Notification.create! notification }
 
+    sleep(3)
     emails_to = ['roiekoper@gmail.com']
     emails_to << 'idanshviro@gmail.com' unless @@test_workspace
     emails_to.each do |to|
