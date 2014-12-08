@@ -174,9 +174,11 @@ class Product < ActiveRecord::Base
           all_assins << asin_number
           if product
             ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-            product.amazon_stock_change?(get_value(stock), notifications)
             product.ebay_stock_change(ebay_item, notifications)
-            product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
+            # if amazon in stock check changes in price.
+            if product.amazon_stock_change?(get_value(stock), notifications)
+              product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
+            end
           end
         end
         page += 1
@@ -228,10 +230,11 @@ class Product < ActiveRecord::Base
         if ebay_item[:ack] == 'Failure'
           UserMailer.send_email("Exception in ebay call: #{ebay_item}, product: #{product.attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
         else
-          product.amazon_stock_change?(one_get_stock(item_page), notifications)
           product.ebay_stock_change(ebay_item, notifications)
-          product.price_change?(one_get_price(item_page), ebay_item, notifications)
-          product.prime_change?(one_get_prime(item_page), notifications)
+          if product.amazon_stock_change?(one_get_stock(item_page), notifications)
+            product.price_change?(one_get_price(item_page), ebay_item, notifications)
+            product.prime_change?(one_get_prime(item_page), notifications)
+          end
         end
       rescue
         notifications << {
@@ -261,12 +264,14 @@ class Product < ActiveRecord::Base
   end
 
   def amazon_stock_change?(stock, notifications)
-    unless self.class.in_stock?(stock)
+    is_in_stock = self.class.in_stock?(stock)
+    unless is_in_stock
       notifications << { :text => I18n.t('notifications.amazon_ending', :title => title),
                          :product => self,
                          :change_title => 'amazon_unavailable' }.
           merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
     end
+    is_in_stock
   end
 
   def ebay_stock_change(ebay_item, notifications)
