@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141202201341) do
+ActiveRecord::Schema.define(version: 20141208080232) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -51,6 +51,8 @@ ActiveRecord::Schema.define(version: 20141202201341) do
     t.string "kind"
     t.string "title"
   end
+
+  add_index "lists", ["kind"], name: "index_lists_on_kind", using: :btree
 
   create_table "notifications", force: true do |t|
     t.text     "text"

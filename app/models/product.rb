@@ -5,7 +5,6 @@ class Product < ActiveRecord::Base
 
   @@test_workspace = Rails.env == 'development'
   @@thread_compare_working = false
-  @@working_count = 2
 
   def self.test_workspace
     @@test_workspace
@@ -13,14 +12,6 @@ class Product < ActiveRecord::Base
 
   def self.test_workspace= status
     @@test_workspace = status
-  end
-
-  def self.working_count
-    @@working_count
-  end
-
-  def self.working_count= n
-    @@working_count = n
   end
 
   def self.create_products_notifications
@@ -74,12 +65,13 @@ class Product < ActiveRecord::Base
 
   def self.compare_products
     @@thread_compare_working = true
+    compare_count = List.compare_count
     notifications = []
     extra_content = nil
-    p "*** #{@@working_count} ***"
+    p "*** #{compare_count} ***"
 
     seconds = Benchmark.realtime do
-      notifications, extra_content = @@working_count % 2 == 0 ? compare_each_product : compare_wish_list
+      notifications, extra_content = compare_count % 2 == 0 ? compare_each_product : compare_wish_list
     end
 
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
@@ -89,14 +81,15 @@ class Product < ActiveRecord::Base
     emails_to = ['roiekoper@gmail.com']
     emails_to << 'idanshviro@gmail.com' unless @@test_workspace
     emails_to.each do |to|
-      UserMailer.send_email("--- #{extra_content} \n ---, Checking no': #{@@working_count}",
+      UserMailer.send_email("--- #{extra_content} \n ---, Checking no': #{compare_count}",
                             I18n.t('notifications.compare_complete',
                                    :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
                                    :new_notifications_count => notifications.size,
                                    :work_time => "#{Time.at(seconds).gmtime.strftime('%R:%S')}"),
                             to).deliver
     end
-    @@working_count += 1
+
+    List.update_compare_count
     @@thread_compare_working = false
   end
 
@@ -201,7 +194,7 @@ class Product < ActiveRecord::Base
 
     extra_content = "Over on #{(page - 1)} pages, out of #{last_page}"
     if page - 1 != last_page
-      UserMailer.send_email('', extra_content, 'roiekoper@gmail.com').deliver
+      UserMailer.send_email("Notifications size: #{notifications.count}", extra_content, 'roiekoper@gmail.com').deliver
     end
 
     [notifications, extra_content]
