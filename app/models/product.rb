@@ -71,11 +71,15 @@ class Product < ActiveRecord::Base
     p "*** #{compare_count} ***"
 
     seconds = Benchmark.realtime do
-      notifications, extra_content = compare_count % 2 == 0 ? compare_each_product : compare_wish_list
+      notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
     end
 
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
-    notifications.each { |notification| Notification.create! notification }
+    notifications.each { |notification| Notification.create!(notification) }
+
+    UserMailer.send_email('',
+                          'Finished create all notifications',
+                          'roiekoper@gmail.com').deliver
 
     emails_to = ['roiekoper@gmail.com']
 
@@ -95,7 +99,7 @@ class Product < ActiveRecord::Base
 
     UserMailer.send_email('Compare Result',
                           "sec: #{seconds}, Notification size:#{notifications.size},extra: #{extra_content}",
-                          'roiekoper@gmail.com')
+                          'roiekoper@gmail.com').deliver
 
     UserMailer.send_email('',
                           I18n.t('notifications.compare_complete',
