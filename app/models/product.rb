@@ -255,6 +255,10 @@ class Product < ActiveRecord::Base
             product.prime_change?(one_get_prime(item_page), notifications)
           end
         end
+
+        # delay between each product of 2 seconds
+        sleep(2)
+
       rescue
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
