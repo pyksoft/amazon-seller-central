@@ -92,7 +92,12 @@ class Product < ActiveRecord::Base
                             to).deliver
     end
 
-    UserMailer.send_email("--- #{extra_content} \n ---, Checking no': #{compare_count}",
+
+    UserMailer.send_email('Compare Result',
+                          "sec: #{seconds}, Notification size:#{notifications.size},extra: #{extra_content}",
+                          'roiekoper@gmail.com')
+
+    UserMailer.send_email('',
                           I18n.t('notifications.compare_complete',
                                  :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
                                  :new_notifications_count => notifications.size,
