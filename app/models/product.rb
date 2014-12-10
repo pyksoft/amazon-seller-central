@@ -74,9 +74,6 @@ class Product < ActiveRecord::Base
       notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
     end
 
-    Notification.where('seen is null OR seen = false').update_all(:seen => true)
-    notifications.each { |notification| Notification.create!(notification) }
-
     UserMailer.send_email('',
                           'Finished create all notifications',
                           'roiekoper@gmail.com').deliver
@@ -110,6 +107,9 @@ class Product < ActiveRecord::Base
 
     List.update_compare_count
     @@thread_compare_working = false
+
+    Notification.where('seen is null OR seen = false').update_all(:seen => true)
+    notifications.each { |notification| Notification.create!(notification) }
   end
 
   def create_with_requests
