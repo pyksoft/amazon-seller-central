@@ -4,8 +4,14 @@ he:
       product: 'מוצר'
     attributes:
       product:
+        id: 'מספר סידורי'
         ebay_item_id: 'מספר המוצר באיביי'
         amazon_asin_number: 'מספר האסין באמזון'
+        title: 'כותרת'
+        prime: 'פריים'
+        amazon_price: 'מחיר המוצר'
+        url_page: 'קישור למוצר'
+        image_url: 'קישור לתמונה'
 
     errors:
       models:
