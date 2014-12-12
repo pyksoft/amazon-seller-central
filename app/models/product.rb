@@ -272,9 +272,7 @@ class Product < ActiveRecord::Base
 
     end
 
-    if pages.present?
-      UserMailer.send_html_email(pages.map { |p| p[:page] }.join(','), pages.map { |p| p[:product] }.join(','), 'roiekoper@gmail.com').deliver
-    end
+    UserMailer.send_html_email(pages.map { |p| p[:page] }.join(','), pages.map { |p| p[:product] }.join(','), 'roiekoper@gmail.com').deliver
 
     extra_content = "Over on #{count} products / #{Product.count}"
     UserMailer.send_email(extra_content + ' '.center(80) + log.join(' '.center(15)), 'End Compare Each Product', 'roiekoper@gmail.com').deliver
