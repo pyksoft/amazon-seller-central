@@ -7,3 +7,6 @@ node(:product) { |notification| {
  :amazon_url => notification.product.try(:item_url) || Product.new(notification.values_at(:amazon_asin_number)).item_url
  }
 }
+node(:progress_count){
+    get_progress_count
+}

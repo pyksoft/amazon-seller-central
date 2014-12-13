@@ -22,4 +22,8 @@ class NotificationsController < ApplicationController
                end
     render({ :json => response})
   end
+
+  def progress_count
+    render({ :json => {:progress_count => get_progress_count}})
+  end
 end

@@ -54,3 +54,32 @@ class SystemUpdater
       end
     end
 end
+
+class Numeric
+  def percent_of(n)
+    self.to_f / n.to_f * 100.0
+  end
+end
+
+def set_products_count
+  count = Product.count
+  REDIS.set :products_count,count
+  count
+end
+
+def get_products_count
+  REDIS.get :products_count
+end
+
+def reset_progress_count
+  REDIS.set :progress_count,0
+end
+
+def get_progress_count
+  REDIS.get(:progress_count) || 0
+end
+
+def set_progress_count(product_index)
+  percent = product_index.percent_of(get_products_count || set_products_count).to_i
+  REDIS.set(:progress_count,percent)
+end

@@ -59,6 +59,7 @@ Rails.application.routes.draw do
   get 'products/download_errors' => 'products#download_errors', :defaults => { :format => 'json' }
   get 'products/download_compare_errors' => 'products#download_compare_errors', :defaults => { :format => 'json' }
   get 'products/upload_wish_list' => 'products#upload_wish_list', :defaults => { :format => 'json' }
+  get 'notifications/progress_count' => 'notifications#progress_count', :defaults => { :format => 'json' }
 
   post 'products/create_product' => 'products#create_product'
   post 'notifications/change_accepted' => 'notifications#change_accepted'

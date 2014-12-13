@@ -68,10 +68,11 @@ class Product < ActiveRecord::Base
     compare_count = List.compare_count
     notifications = []
     extra_content = nil
+    reset_progress_count
     p "*** #{compare_count} ***"
 
     seconds = Benchmark.realtime do
-      notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
+      notifications, extra_content = (compare_count % 3).zero? ? compare_each_product : compare_wish_list
     end
 
     UserMailer.send_email('',
@@ -268,6 +269,7 @@ class Product < ActiveRecord::Base
         # product.destroy!
       end
 
+      set_progress_count count
       count += 1
 
     end
