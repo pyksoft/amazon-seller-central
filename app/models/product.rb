@@ -72,7 +72,7 @@ class Product < ActiveRecord::Base
     p "*** #{compare_count} ***"
 
     seconds = Benchmark.realtime do
-      notifications, extra_content = (compare_count % 3).zero? ? compare_each_product : compare_wish_list
+      notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
     end
 
     UserMailer.send_email('',
@@ -257,8 +257,8 @@ class Product < ActiveRecord::Base
           end
         end
 
-        # delay between each product of 2 seconds
-        sleep(2)
+        # delay between each product of 3 seconds
+        sleep(3)
 
       rescue
         notifications << {
