@@ -229,7 +229,7 @@ class Product < ActiveRecord::Base
     log = []
     pages = []
 
-    Product.all.limit(5).each do |product|
+    Product.all.each do |product|
       p "Over items: #{count}"
       begin
         item_page = agent.get(product.item_url)
