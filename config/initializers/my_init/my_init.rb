@@ -61,8 +61,8 @@ class Numeric
   end
 end
 
-def set_products_count
-  count = Product.count
+def set_products_count(product_count = nil)
+  count = product_count || Product.count
   REDIS.set :products_count,count
   count
 end

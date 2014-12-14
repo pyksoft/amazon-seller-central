@@ -256,6 +256,7 @@
     <orderEntry type="library" scope="PROVIDED" name="activeadmin (v1.0.0.pre@0d7d60, RVM: ruby-2.0.0-p195) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="activemodel (v4.1.0, RVM: ruby-2.0.0-p195) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="activerecord (v4.1.0, RVM: ruby-2.0.0-p195) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="activerecord-import (v0.6.0, RVM: ruby-2.0.0-p195) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="activesupport (v4.1.0, RVM: ruby-2.0.0-p195) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="amazon-ecs (v2.2.5, RVM: ruby-2.0.0-p195) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="arbre (v1.0.2, RVM: ruby-2.0.0-p195) [gem]" level="application" />

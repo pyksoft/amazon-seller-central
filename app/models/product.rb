@@ -95,6 +95,8 @@ class Product < ActiveRecord::Base
     end
 
 
+    reset_progress_count
+
     UserMailer.send_email('Compare Result',
                           "sec: #{seconds}, Notification size:#{notifications.size},extra: #{extra_content}",
                           'roiekoper@gmail.com').deliver
@@ -110,7 +112,9 @@ class Product < ActiveRecord::Base
     @@thread_compare_working = false
 
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
-    notifications.each { |notification| Notification.create!(notification) }
+    columns = notifications.first.keys
+    values = notifications.map(&:values)
+    Notification.import columns, values, :validate => false
   end
 
   def create_with_requests
@@ -155,11 +159,13 @@ class Product < ActiveRecord::Base
     agent = create_agent
     done = false
     page = 1
+    count = 0
     notifications = []
     all_assins = []
     product = nil
     wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
     last_page = YAML.load(wishlist.search('.a-').last.attributes['data-pag-trigger'].value)['page']
+    set_products_count last_page.to_i * 25
     sleep(2)
 
     begin
@@ -200,6 +206,9 @@ class Product < ActiveRecord::Base
               product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
             end
           end
+
+          count +=1
+          set_progress_count count
         end
         page += 1
       end
@@ -263,7 +272,7 @@ class Product < ActiveRecord::Base
       rescue
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
-            :product => product,
+            :product_id => product.id,
             :change_title => :unknown_item
         }.merge(product.attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
         # product.destroy!
@@ -290,7 +299,7 @@ class Product < ActiveRecord::Base
     is_in_stock = self.class.in_stock?(stock)
     unless is_in_stock
       notifications << { :text => I18n.t('notifications.amazon_ending', :title => title),
-                         :product => self,
+                         :product_id => id,
                          :change_title => 'amazon_unavailable' }.
           merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
     end
@@ -300,7 +309,7 @@ class Product < ActiveRecord::Base
   def ebay_stock_change(ebay_item, notifications)
     if self.class.ebay_product_ending?(ebay_item)
       notifications << { :text => I18n.t('notifications.ebay_ending', :title => title),
-                         :product => self,
+                         :product_id => id,
                          :change_title => 'ebay_unavailable' }.
           merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
     end
@@ -321,7 +330,7 @@ class Product < ActiveRecord::Base
                                          :amazon_new_price => self.class.show_price(new_price),
                                          :ebay_old_price => self.class.show_price(ebay_price),
                                          :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
-                         :product => self,
+                         :product_id => id,
                          :change_title => "#{price_change.round(2)}_price"
       }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
 
@@ -335,7 +344,7 @@ class Product < ActiveRecord::Base
                                          Hash[[:old_prime, :new_prime].zip([prime, new_prime].map do |val|
                                                                              I18n.t(val.to_s, :scope => :app)
                                                                            end)]),
-                         :product => self,
+                         :product_id => id,
                          :row_css => new_prime ? 'green_prime' : 'red_prime',
                          :change_title => "#{new_prime}_prime" }.
           merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))

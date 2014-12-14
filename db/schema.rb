@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141208080232) do
+ActiveRecord::Schema.define(version: 20141214230238) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -59,13 +59,13 @@ ActiveRecord::Schema.define(version: 20141208080232) do
     t.integer  "product_id"
     t.datetime "created_at"
     t.boolean  "seen"
-    t.string   "icon"
-    t.string   "image_url"
-    t.string   "title"
-    t.string   "change_title"
-    t.string   "row_css"
-    t.string   "amazon_asin_number"
-    t.string   "ebay_item_id"
+    t.text     "icon"
+    t.text     "image_url"
+    t.text     "title"
+    t.text     "change_title"
+    t.text     "row_css"
+    t.text     "amazon_asin_number"
+    t.text     "ebay_item_id"
   end
 
   add_index "notifications", ["seen"], name: "index_notifications_on_seen", using: :btree
@@ -79,7 +79,7 @@ ActiveRecord::Schema.define(version: 20141208080232) do
     t.boolean  "prime"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "url_page"
+    t.text     "url_page"
   end
 
   add_index "products", ["amazon_asin_number"], name: "index_products_on_amazon_asin_number", using: :btree

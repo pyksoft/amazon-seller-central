@@ -10,3 +10,7 @@ node(:product) { |notification| {
 node(:progress_count){
     get_progress_count
 }
+
+node(:compare_title){
+    ((List.compare_count % 2).zero? ? 'Prime' : 'Wishlist') + ' Compare'
+}
