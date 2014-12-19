@@ -108,7 +108,7 @@ class Product < ActiveRecord::Base
                                  :work_time => "#{Time.at(seconds).gmtime.strftime('%R:%S')}"),
                           'roiekoper@gmail.com').deliver
 
-    # List.update_compare_count
+    List.update_compare_count
     @@thread_compare_working = false
 
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
@@ -273,7 +273,8 @@ class Product < ActiveRecord::Base
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
             :product_id => product.id,
-            :change_title => :unknown_item
+            :change_title => :unknown_item,
+            :row_css => ''
         }.merge(product.attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
         # product.destroy!
       end
@@ -300,8 +301,9 @@ class Product < ActiveRecord::Base
     unless is_in_stock
       notifications << { :text => I18n.t('notifications.amazon_ending', :title => title),
                          :product_id => id,
-                         :change_title => 'amazon_unavailable' }.
-          merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
+                         :change_title => 'amazon_unavailable',
+                         :row_css => ''
+      }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
     end
     is_in_stock
   end
@@ -310,8 +312,9 @@ class Product < ActiveRecord::Base
     if self.class.ebay_product_ending?(ebay_item)
       notifications << { :text => I18n.t('notifications.ebay_ending', :title => title),
                          :product_id => id,
-                         :change_title => 'ebay_unavailable' }.
-          merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
+                         :change_title => 'ebay_unavailable',
+                         :row_css => ''
+      }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
     end
   end
 
@@ -326,12 +329,14 @@ class Product < ActiveRecord::Base
         UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       end
 
-      notifications << { :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
-                                         :amazon_new_price => self.class.show_price(new_price),
-                                         :ebay_old_price => self.class.show_price(ebay_price),
-                                         :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
-                         :product_id => id,
-                         :change_title => "#{price_change.round(2)}_price"
+      notifications << {
+          :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
+                          :amazon_new_price => self.class.show_price(new_price),
+                          :ebay_old_price => self.class.show_price(ebay_price),
+                          :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
+          :product_id => id,
+          :change_title => "#{price_change.round(2)}_price",
+          :row_css => '',
       }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
 
       update_attribute(:amazon_price, self.class.show_price(new_price)) unless @@test_workspace
