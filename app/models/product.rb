@@ -69,6 +69,7 @@ class Product < ActiveRecord::Base
     notifications = []
     extra_content = nil
     reset_progress_count
+    set_products_count
     p "*** #{compare_count} ***"
 
     seconds = Benchmark.realtime do
@@ -350,8 +351,8 @@ class Product < ActiveRecord::Base
                                                                              I18n.t(val.to_s, :scope => :app)
                                                                            end)]),
                          :product_id => id,
-                         :row_css => new_prime ? 'green_prime' : 'red_prime',
-                         :change_title => "#{new_prime}_prime" }.
+                         :change_title => "#{new_prime}_prime",
+                         :row_css => new_prime ? 'green_prime' : 'red_prime' }.
           merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
     end
   end
