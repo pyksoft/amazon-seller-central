@@ -441,8 +441,11 @@ class Product < ActiveRecord::Base
   end
 
   def self.in_stock?(stock)
-    ['In Stock', 'left in stock--order soon', 'left in stock'].any? do |instock_str|
-      stock.to_s.downcase.match(/^(.*?(\b#{instock_str.downcase}\b)[^$]*)$/)
+    # check if remove from amazon web
+    unless stock.to_s.downcase.match(/^(.*?(\b#{"We don't know when or if this item will be back in stock".downcase}\b)[^$]*)$/)
+      ['In Stock', 'left in stock--order soon', 'left in stock'].any? do |instock_str|
+        stock.to_s.downcase.match(/^(.*?(\b#{instock_str.downcase}\b)[^$]*)$/)
+      end
     end
   end
 
