@@ -105,13 +105,6 @@ class Product < ActiveRecord::Base
                           "sec: #{seconds}, Notification size:#{notifications.size},extra: #{extra_content}",
                           'roiekoper@gmail.com').deliver
 
-    UserMailer.send_email('',
-                          I18n.t('notifications.compare_complete',
-                                 :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
-                                 :new_notifications_count => notifications.size,
-                                 :work_time => "#{Time.at(seconds).gmtime.strftime('%R:%S')}"),
-                          'roiekoper@gmail.com').deliver
-
     List.update_compare_count
     @@thread_compare_working = false
 
