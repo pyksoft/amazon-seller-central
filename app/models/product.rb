@@ -121,7 +121,7 @@ class Product < ActiveRecord::Base
     Notification.import columns, values, :validate => false
 
     UserMailer.send_email('',
-                          "Notification unseen size: #{Notification.where(:seen => nil).count}",
+                          "Notification unseen size: #{Notification.where(:seen => nil).count}, Notification size: #{Notification.count}",
                           'roiekoper@gmail.com').deliver
   end
 
