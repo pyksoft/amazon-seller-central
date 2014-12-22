@@ -34,4 +34,11 @@ class Notification < ActiveRecord::Base
       { :errs => I18n.t('messages.not_exists_product') }
     end
   end
+
+  def self.delete_old_notifications
+    if Notification.count > 7000
+      ids = Notification.where(:seen => true).limit(2000).pluck(:id)
+      Notification.where(:id => ids).delete_all
+    end
+  end
 end

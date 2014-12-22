@@ -68,17 +68,20 @@ class Product < ActiveRecord::Base
     compare_count = List.compare_count
     notifications = []
     extra_content = nil
+    Notification.delete_old_notifications
     reset_progress_count
     set_products_count
     p "*** #{compare_count} ***"
 
     seconds = Benchmark.realtime do
-      notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
-    end
+      Product.transaction do
+        notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
+      end
 
-    UserMailer.send_email('',
-                          'Finished create all notifications',
-                          'roiekoper@gmail.com').deliver
+      UserMailer.send_email('',
+                            'Finished Transaction',
+                            'roiekoper@gmail.com').deliver
+    end
 
     emails_to = ['roiekoper@gmail.com']
 
@@ -116,6 +119,10 @@ class Product < ActiveRecord::Base
     columns = notifications.first.keys
     values = notifications.map(&:values)
     Notification.import columns, values, :validate => false
+
+    UserMailer.send_email('',
+                          "Notification unseen size: #{Notification.where(:seen => nil).count}",
+                          'roiekoper@gmail.com').deliver
   end
 
   def create_with_requests
