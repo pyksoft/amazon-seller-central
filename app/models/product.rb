@@ -60,7 +60,7 @@ class Product < ActiveRecord::Base
   end
 
   def validate_url_page
-    url_page && url_page.include?("#{amazon_asin_number}") || !url_page
+    url_page.present? && url_page.include?("#{amazon_asin_number}") || !url_page.present?
   end
 
   def self.compare_products
@@ -358,7 +358,7 @@ class Product < ActiveRecord::Base
   end
 
   def item_url
-    url_page || "http://www.amazon.com/dp/#{amazon_asin_number}"
+    url_page.present? ? url_page : "http://www.amazon.com/dp/#{amazon_asin_number}"
   end
 
   def amazon_out_of_stock
