@@ -269,6 +269,8 @@ class Product < ActiveRecord::Base
 
         # delay between each product of 3 seconds
         sleep(3)
+        # delay between 100 each products of 10 seconds
+        sleep(10) if (count % 100).zero?
 
       rescue
         notifications << {
