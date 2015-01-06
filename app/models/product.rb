@@ -105,7 +105,7 @@ class Product < ActiveRecord::Base
                           "sec: #{seconds}, Notification size:#{notifications.size},extra: #{extra_content}",
                           'roiekoper@gmail.com').deliver
 
-    List.update_compare_count
+    # List.update_compare_count
     @@thread_compare_working = false
 
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
