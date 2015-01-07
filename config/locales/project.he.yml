@@ -12,6 +12,7 @@ he:
         amazon_price: 'מחיר המוצר'
         url_page: 'קישור למוצר'
         image_url: 'קישור לתמונה'
+        prefer_url: 'העדפת קישור'
 
     errors:
       models:

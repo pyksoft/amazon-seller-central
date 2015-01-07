@@ -4,7 +4,7 @@ ActiveAdmin.register Product do
   config.sort_order = 'id_asc'
 
 
-  permit_params :title, :amazon_asin_number, :ebay_item_id,:amazon_price,:url_page,:image_url
+  permit_params :title, :amazon_asin_number, :ebay_item_id, :amazon_price, :url_page, :image_url, :prime, :prefer_url
   filter :ebay_item_id
   preserve_default_filters!
 
@@ -26,6 +26,7 @@ ActiveAdmin.register Product do
     end
 
     column :prime
+    column :prefer_url
     column :url_page do |product|
       link_to product.url_page, product.url_page.present? ? product.url_page : ''
     end
@@ -48,20 +49,18 @@ ActiveAdmin.register Product do
         end
       end
       row(:prime)
+      row(:prefer_url)
       row(:url_page)
       row(:image_url)
     end
   end
 
-  form do |f|
+  form :url => '/products/admin_create' do |f|
     f.inputs 'פרטי המוצר' do
-      f.input :title
       f.input :amazon_asin_number
       f.input :ebay_item_id
-      f.input :amazon_price
-      f.input :prime
+      f.input :prefer_url
       f.input :url_page
-      f.input :image_url
     end
 
     f.semantic_errors *f.object.errors.keys

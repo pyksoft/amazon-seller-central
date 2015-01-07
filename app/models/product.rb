@@ -1,10 +1,12 @@
 class Product < ActiveRecord::Base
   validates_uniqueness_of :ebay_item_id, :amazon_asin_number
   validates_presence_of :ebay_item_id, :amazon_asin_number
-  validate :ebay_item_validation, :amazon_asin_number_validation
+  validate :ebay_item_validation, :amazon_asin_number_validation, :on => :create
 
   @@test_workspace = Rails.env == 'development'
   @@thread_compare_working = false
+
+  require 'compare_products'
 
   def self.test_workspace
     @@test_workspace
@@ -163,6 +165,7 @@ class Product < ActiveRecord::Base
     count = 0
     notifications = []
     all_assins = []
+    pages = []
     product = nil
     wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
     last_page = YAML.load(wishlist.search('.a-').last.attributes['data-pag-trigger'].value)['page']
@@ -200,11 +203,15 @@ class Product < ActiveRecord::Base
           done = true if all_assins.include?(asin_number) && page >= last_page
           all_assins << asin_number
           if product
-            ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-            product.ebay_stock_change(ebay_item, notifications)
-            # if amazon in stock check changes in price.
-            if product.amazon_stock_change?(get_value(stock), notifications)
-              product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
+            if product.prefer_url
+              product.compare_with_url create_agent, [], pages, notifications
+            else
+              ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
+              product.ebay_stock_change(ebay_item, notifications)
+              # if amazon in stock check changes in price.
+              if product.amazon_stock_change?(get_value(stock), notifications)
+                product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
+              end
             end
           end
 
@@ -242,34 +249,11 @@ class Product < ActiveRecord::Base
     Product.all.each do |product|
       p "Over items: #{count}"
       begin
-        item_page = agent.get(product.item_url)
-        ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-        log << "amazon_asin_number: #{product.amazon_asin_number},ebay_item_id: #{product.ebay_item_id},id: #{product.id}, Amazon stock: #{one_get_stock(item_page)}, Amazon In Stock? #{in_stock?(one_get_stock(item_page))}, Price: #{one_get_price(item_page)}, Prime: #{one_get_prime(item_page)}"
-
-        if item_page.body.include?('dcq_question_subjective_1')
-          UserMailer.send_email("Exception in item page: #{item_page}, product: #{product.attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
-        end
-
-        if !in_stock?(one_get_stock(item_page)) && !one_get_stock(item_page).present?
-          pages << {
-              :page => "#{item_page.body.to_s.force_encoding('UTF-8')} \n\n\n ================================= \n \n \n",
-              :product => product.amazon_asin_number
-          }
-        end
-
-        if ebay_item[:ack] == 'Failure'
-          UserMailer.send_email("Exception in ebay call: #{ebay_item}, product: #{product.attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
-        else
-          product.ebay_stock_change(ebay_item, notifications)
-          if product.amazon_stock_change?(one_get_stock(item_page), notifications)
-            product.price_change?(one_get_price(item_page), ebay_item, notifications)
-            product.prime_change?(one_get_prime(item_page), notifications)
-          end
-        end
+        product.compare_with_url agent, log, pages, notifications
 
         # delay between each product of 3 seconds
         sleep(3)
-        # delay between 100 each products of 10 seconds
+        # delay between each 100 products of 10 seconds
         sleep(10) if (count % 100).zero?
 
       rescue

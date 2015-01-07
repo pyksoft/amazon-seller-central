@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141214230238) do
+ActiveRecord::Schema.define(version: 20141230061145) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -80,6 +80,7 @@ ActiveRecord::Schema.define(version: 20141214230238) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.text     "url_page"
+    t.boolean  "prefer_url",         default: false
   end
 
   add_index "products", ["amazon_asin_number"], name: "index_products_on_amazon_asin_number", using: :btree

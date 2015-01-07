@@ -29,6 +29,14 @@ class ProductsController < ApplicationController
     render({ :json => (response) })
   end
 
+  def admin_create
+    response = Product.new(params[:product].
+                               slice(:amazon_asin_number, :ebay_item_id).
+                               inject({}) { |h, (k, v)| h.merge(k => v.strip.upcase) }.
+                               merge(params[:product].slice(:url_page,:prefer_url))).admin_create
+    render({ :json => (response) })
+  end
+
   def download_errors
     send_file "#{Rails.root}/log/errors.txt", :type => 'text/plain'
   end
