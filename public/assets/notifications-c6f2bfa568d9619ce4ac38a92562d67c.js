@@ -9,3 +9,4 @@ function addNotification(type,text) {
         div.remove();
     }, 5500);
 }
+;

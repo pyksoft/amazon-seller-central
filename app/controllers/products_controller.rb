@@ -30,11 +30,11 @@ class ProductsController < ApplicationController
   end
 
   def admin_create
-    response = Product.new(params[:product].
-                               slice(:amazon_asin_number, :ebay_item_id).
-                               inject({}) { |h, (k, v)| h.merge(k => v.strip.upcase) }.
-                               merge(params[:product].slice(:url_page,:prefer_url))).admin_create
-    render({ :json => (response) })
+    product = params[:product][:id].present? ? Product.find_by_id(params[:product][:id]) : Product.new
+    response = product.admin_create(params)
+
+    flash[:notice] = response
+    redirect_to '/admin'
   end
 
   def download_errors

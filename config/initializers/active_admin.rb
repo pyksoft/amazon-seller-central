@@ -245,4 +245,7 @@ ActiveAdmin.setup do |config|
   #
   config.filters = true
 
+  config.register_javascript 'notifications.js'
+  config.register_stylesheet 'notifications.css'
+
 end

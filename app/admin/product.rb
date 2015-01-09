@@ -4,7 +4,7 @@ ActiveAdmin.register Product do
   config.sort_order = 'id_asc'
 
 
-  permit_params :title, :amazon_asin_number, :ebay_item_id, :amazon_price, :url_page, :image_url, :prime, :prefer_url
+  permit_params :id,:title, :amazon_asin_number, :ebay_item_id, :amazon_price, :url_page, :image_url, :prime, :prefer_url
   filter :ebay_item_id
   preserve_default_filters!
 
@@ -55,10 +55,13 @@ ActiveAdmin.register Product do
     end
   end
 
-  form :url => '/products/admin_create' do |f|
+  form :url => '/products/admin_create',:method => :post do |f|
     f.inputs 'פרטי המוצר' do
+      f.input :id,:as => :hidden
       f.input :amazon_asin_number
       f.input :ebay_item_id
+      f.input :amazon_price
+      f.input :prime
       f.input :prefer_url
       f.input :url_page
     end

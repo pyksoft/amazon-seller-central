@@ -31,7 +31,8 @@ he:
     product: 'המוצר אינו נוצר, ה Amazon Asin Number לא תקין'
 
   messages:
-    product_create: 'המוצר נוצר בהצלחה!'
+    product_created: 'המוצר נוצר בהצלחה!'
+    product_updated: 'המוצר עודכן בהצלחה!'
     notification_accepted: 'השינוי התבצע בהצלחה!'
     not_exists_product: 'המוצר אינו קיים עוד'
     not_exists_notifications: 'שינוי המוצר נמחק כבר בעבר'

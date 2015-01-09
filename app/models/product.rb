@@ -129,7 +129,7 @@ class Product < ActiveRecord::Base
         self.image_url = self.class.one_get_image_url(item_page)
         self.title = self.class.one_get_title(item_page)
         save!
-        { :msg => I18n.t('messages.product_create') }
+        { :msg => I18n.t('messages.product_created') }
       else
         { :errs => errors.full_messages.join(', ') }
       end
@@ -138,15 +138,21 @@ class Product < ActiveRecord::Base
     end
   end
 
-  def admin_create
+  def admin_create(params)
     begin
+      update_attributes(params[:product].
+                            slice(:amazon_asin_number, :ebay_item_id).
+                            inject({}) { |h, (k, v)| h.merge(k => v.strip.upcase) }.
+                            merge(params[:product].slice(:url_page, :prefer_url)))
+
       item_page = self.class.create_agent.get(item_url)
       self.amazon_price = self.class.one_get_price(item_page)
       self.prime = self.class.one_get_prime(item_page).present?
       self.image_url = self.class.one_get_image_url(item_page)
       self.title = self.class.one_get_title(item_page)
       save(:validate => false)
-      I18n.t 'messages.product_create'
+
+      I18n.t "messages.#{params[:product][:id].present? ? 'product_updated' : 'product_created'}"
     rescue Exception => e
       e.message
     end
@@ -167,14 +173,15 @@ class Product < ActiveRecord::Base
     all_assins = []
     pages = []
     product = nil
-    wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
-    last_page = YAML.load(wishlist.search('.a-').last.attributes['data-pag-trigger'].value)['page']
+    wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/O3PDB3LMD7ML/ref=topnav_lists_2'
+    last_page = YAML.load((wishlist.search('.a-').last && wishlist.search('.a-').last.attributes['data-pag-trigger'].value).to_s)
+    last_page = last_page && last_page['page'] || 1
     set_products_count last_page.to_i * 25
     sleep(2)
 
     begin
-      while (!done) do
-        wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
+      while (!done && page < 2) do
+        wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/O3PDB3LMD7ML/ref=topnav_lists_2'
         items = wishlist.search('.g-item-sortable')
 
         if items.empty?
@@ -428,6 +435,7 @@ class Product < ActiveRecord::Base
 
   def self.in_stock?(stock)
     # check if remove from amazon web
+    stock.gsub!('In stock on','')
     unless stock.to_s.downcase.match(/^(.*?(\b#{"We don't know when or if this item will be back in stock".downcase}\b)[^$]*)$/)
       ['In Stock', 'left in stock--order soon', 'left in stock'].any? do |instock_str|
         stock.to_s.downcase.match(/^(.*?(\b#{instock_str.downcase}\b)[^$]*)$/)
