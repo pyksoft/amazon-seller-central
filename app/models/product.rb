@@ -173,15 +173,15 @@ class Product < ActiveRecord::Base
     all_assins = []
     pages = []
     product = nil
-    wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/O3PDB3LMD7ML/ref=topnav_lists_2'
+    wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
     last_page = YAML.load((wishlist.search('.a-').last && wishlist.search('.a-').last.attributes['data-pag-trigger'].value).to_s)
     last_page = last_page && last_page['page'] || 1
     set_products_count last_page.to_i * 25
     sleep(2)
 
     begin
-      while (!done && page < 2) do
-        wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/O3PDB3LMD7ML/ref=topnav_lists_2'
+      while (!done) do
+        wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
         items = wishlist.search('.g-item-sortable')
 
         if items.empty?
