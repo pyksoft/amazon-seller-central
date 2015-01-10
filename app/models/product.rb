@@ -140,17 +140,24 @@ class Product < ActiveRecord::Base
 
   def admin_create(params)
     begin
-      update_attributes(params[:product].
-                            slice(:amazon_asin_number, :ebay_item_id).
-                            inject({}) { |h, (k, v)| h.merge(k => v.strip.upcase) }.
-                            merge(params[:product].slice(:url_page, :prefer_url)))
+      %i[amazon_asin_number ebay_item_id].each do |main_attr|
+        update_attribute main_attr, params[:product][main_attr].strip.upcase
+      end
 
       item_page = self.class.create_agent.get(item_url)
-      self.amazon_price = self.class.one_get_price(item_page)
-      self.prime = self.class.one_get_prime(item_page).present?
-      self.image_url = self.class.one_get_image_url(item_page)
-      self.title = self.class.one_get_title(item_page)
-      save(:validate => false)
+
+      [
+          [:url_page],
+          [:prefer_url],
+          [:amazon_price, self.class.one_get_price(item_page)],
+          [:prime, self.class.one_get_prime(item_page).present?],
+          [:image_url, self.class.one_get_image_url(item_page)],
+          [:title, self.class.one_get_title(item_page)]
+      ].each do |attr, page_value|
+        self.send("#{attr}=", params[:product][attr].present? ? params[:product][attr] : page_value)
+      end
+
+      self.save(:validate => false)
 
       I18n.t "messages.#{params[:product][:id].present? ? 'product_updated' : 'product_created'}"
     rescue Exception => e
@@ -435,7 +442,7 @@ class Product < ActiveRecord::Base
 
   def self.in_stock?(stock)
     # check if remove from amazon web
-    stock.gsub!('In stock on','')
+    stock.gsub!('In stock on', '')
     unless stock.to_s.downcase.match(/^(.*?(\b#{"We don't know when or if this item will be back in stock".downcase}\b)[^$]*)$/)
       ['In Stock', 'left in stock--order soon', 'left in stock'].any? do |instock_str|
         stock.to_s.downcase.match(/^(.*?(\b#{instock_str.downcase}\b)[^$]*)$/)

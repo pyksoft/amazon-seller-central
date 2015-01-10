@@ -61,9 +61,11 @@ ActiveAdmin.register Product do
       f.input :amazon_asin_number
       f.input :ebay_item_id
       f.input :amazon_price
+      f.input :title
       f.input :prime
       f.input :prefer_url
       f.input :url_page
+      f.input :image_url
     end
 
     f.semantic_errors *f.object.errors.keys
