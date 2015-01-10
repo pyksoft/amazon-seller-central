@@ -236,7 +236,7 @@ class Product < ActiveRecord::Base
       end
 
     rescue Exception => e
-      UserMailer.send_email("Exception errors:#{e.message}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
+      UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.id}, Page: #{page}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       write_errors I18n.t('errors.diff_error',
                           :time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :error),
                           :id => product.id,
@@ -442,7 +442,7 @@ class Product < ActiveRecord::Base
 
   def self.in_stock?(stock)
     # check if remove from amazon web
-    stock.gsub!('In stock on', '')
+    stock = stock.to_s.gsub('In stock on', '')
     unless stock.to_s.downcase.match(/^(.*?(\b#{"We don't know when or if this item will be back in stock".downcase}\b)[^$]*)$/)
       ['In Stock', 'left in stock--order soon', 'left in stock'].any? do |instock_str|
         stock.to_s.downcase.match(/^(.*?(\b#{instock_str.downcase}\b)[^$]*)$/)
