@@ -269,7 +269,6 @@ class Product < ActiveRecord::Base
         sleep(3)
         # delay between each 100 products of 10 seconds
         sleep(10) if (count % 100).zero?
-
       rescue
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
@@ -488,11 +487,7 @@ class Product < ActiveRecord::Base
   end
 
   def self.one_get_prime(item_page)
-    match_page_price = get_match_price(item_page).last
-    match_page_price.present? && (match_page_price.search('#ourprice_shippingmessage').
-        search('.a-icon-prime').present? || match_page_price.search('.a-icon-prime').present?) ||
-        match_page_price.search('#actualPriceExtraMessaging').present? && match_page_price.search('#actualPriceExtraMessaging').search('img').
-            first.attributes['src'].value.include?('check-prime')
+    item_page.search('#merchant-info').first.children.to_s.downcase.include?('amazon')
   end
 
   def self.one_get_title(item_page)

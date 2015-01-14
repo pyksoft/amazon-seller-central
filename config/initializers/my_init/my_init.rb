@@ -89,6 +89,6 @@ def get_progress_count
 end
 
 def set_progress_count(product_index)
-  percent = product_index.percent_of(get_products_count || set_products_count).to_i
+  percent = product_index.percent_of(get_products_count || set_products_count).round
   redis_working? && REDIS.set(:progress_count, percent)
 end
