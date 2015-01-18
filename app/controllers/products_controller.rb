@@ -48,4 +48,14 @@ class ProductsController < ApplicationController
   def upload_wish_list
     Product.upload_wish_list
   end
+
+  def products_export
+    respond_to do |format|
+      format.xlsx {
+        send_data Product.export.to_stream.read,
+                  :filename => "products_#{I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :regular)}",
+                  :type => "application/vnd.openxmlformates-officedocument.spreadsheetml.sheet"
+      }
+    end
+  end
 end

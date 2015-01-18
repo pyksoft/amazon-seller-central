@@ -1,0 +1,10 @@
+<br>
+<h1 style="text-align: center">Upload Products File</h1>
+<div style="text-align:center;position: absolute; right: 0;left: 0; top:15%">
+  <%= form_tag '/import_products', :multipart => true, :style => 'display: inline-block;text-align: center;' do %>
+      <%= file_field_tag :file %>
+      <br>
+      <br>
+      <%= submit_tag %>
+  <% end %>
+</div>

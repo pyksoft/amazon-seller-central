@@ -61,6 +61,10 @@ Rails.application.routes.draw do
   get 'products/upload_wish_list' => 'products#upload_wish_list', :defaults => { :format => 'json' }
   get 'notifications/progress_count' => 'notifications#progress_count', :defaults => { :format => 'json' }
 
+  get 'products_export' => 'products#products_export', :defaults => { :format => 'xlsx' }
+  # get 'import_products' => 'products#import_products', :defaults => { :format => 'html' }
+  # post 'import_products' => 'products#import_products'
+
   post 'products/admin_create' => 'products#admin_create'
   post 'products/create_product' => 'products#create_product'
   post 'notifications/change_accepted' => 'notifications#change_accepted'

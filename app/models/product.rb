@@ -566,4 +566,17 @@ class Product < ActiveRecord::Base
       p "Finish upload all file, errors size #{errors.size}"
     end
   end
+
+  def self.export
+    p = Axlsx::Package.new
+    wb = p.workbook
+
+    wb.add_worksheet(:name => "Products to #{I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :regular)}") do |sheet|
+      sheet.add_row Product.column_names[1..-1]
+      Product.all.each do |product|
+        sheet.add_row product.values_at(Product.column_names[1..-1]).values
+      end
+    end
+    p
+  end
 end
