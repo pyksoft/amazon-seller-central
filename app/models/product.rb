@@ -329,15 +329,20 @@ class Product < ActiveRecord::Base
         UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       end
 
-      notifications << {
-          :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
-                          :amazon_new_price => self.class.show_price(new_price),
-                          :ebay_old_price => self.class.show_price(ebay_price),
-                          :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
-          :product_id => id,
-          :change_title => "#{price_change.round(2)}_price",
-          :row_css => '',
-      }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
+      # auto price update for products change price under 3$.
+      if price_change.round(2) <= 3.0
+        Product.change_price(price_change.round(2))
+      else
+        notifications << {
+            :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
+                            :amazon_new_price => self.class.show_price(new_price),
+                            :ebay_old_price => self.class.show_price(ebay_price),
+                            :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
+            :product_id => id,
+            :change_title => "#{price_change.round(2)}_price",
+            :row_css => '',
+        }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
+      end
 
       update_attribute(:amazon_price, self.class.show_price(new_price)) unless @@test_workspace
     end
