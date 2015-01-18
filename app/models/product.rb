@@ -269,7 +269,9 @@ class Product < ActiveRecord::Base
         sleep(3)
         # delay between each 100 products of 10 seconds
         sleep(10) if (count % 100).zero?
-      rescue
+      rescue Exception => e
+        UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.id}", 'Exception in prime compare', 'roiekoper@gmail.com').deliver
+
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
             :product_id => product.id,
@@ -331,7 +333,7 @@ class Product < ActiveRecord::Base
 
       # auto price update for products change price under 3$.
       if price_change.round(2) <= 3.0
-        Product.change_price(price_change.round(2))
+        change_price(price_change.round(2))
       else
         notifications << {
             :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
