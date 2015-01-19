@@ -2,8 +2,10 @@ class ProductsController < ApplicationController
   respond_to :json
   before_filter :init_headers
   skip_before_filter :verify_authenticity_token
-  http_basic_authenticate_with :name => 'admin', :password => 'roieroie', :only => :download_errors
-  http_basic_authenticate_with :name => 'admin', :password => 'roieroie', :only => :download_compare_errors
+  http_basic_authenticate_with :name => 'admin', :password => 'roieroie', :only => [:download_errors,
+                                                                                    :download_compare_errors,
+                                                                                    :export_products,
+                                                                                    :import_products]
 
   def init_headers
     headers['Access-Control-Allow-Origin'] = '*'
@@ -45,17 +47,24 @@ class ProductsController < ApplicationController
     send_file "#{Rails.root}/log/add_wishlist_errors.txt", :type => 'text/plain'
   end
 
-  def upload_wish_list
-    Product.upload_wish_list
-  end
-
-  def products_export
+  def export_products
     respond_to do |format|
-      format.xlsx {
+      format.xlsx do
         send_data Product.export.to_stream.read,
                   :filename => "products_#{I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :regular)}",
-                  :type => "application/vnd.openxmlformates-officedocument.spreadsheetml.sheet"
-      }
+                  :type => 'application/vnd.openxmlformates-officedocument.spreadsheetml.sheet'
+      end
+    end
+  end
+
+  def import_products
+    respond_to do |format|
+      format.html
+      format.json do
+        flash_message = Product.import params[:file].tempfile.to_path.to_s,
+                       File.extname(params[:file].original_filename)
+        redirect_to '/import_products', :notice => t(flash_message)
+      end
     end
   end
 end

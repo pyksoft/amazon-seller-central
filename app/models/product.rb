@@ -1,4 +1,7 @@
 class Product < ActiveRecord::Base
+
+  EXCEL_ATTRS = %w[ebay_item_id amazon_asin_number title image_url amazon_price prime url_page prefer_url]
+
   validates_uniqueness_of :ebay_item_id, :amazon_asin_number
   validates_presence_of :ebay_item_id, :amazon_asin_number
   validate :ebay_item_validation, :amazon_asin_number_validation, :on => :create
@@ -332,19 +335,23 @@ class Product < ActiveRecord::Base
       end
 
       # auto price update for products change price under 3$.
-      if price_change.round(2) <= 3.0
-        change_price(price_change.round(2))
-      else
-        notifications << {
-            :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
-                            :amazon_new_price => self.class.show_price(new_price),
-                            :ebay_old_price => self.class.show_price(ebay_price),
-                            :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
-            :product_id => id,
-            :change_title => "#{price_change.round(2)}_price",
-            :row_css => '',
-        }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
-      end
+      # notification without change title not will show on notifications center.
+      change_title = if price_change.round(2) <= 3.0
+                       change_price(price_change.round(2))
+                       ''
+                     else
+                       "#{price_change.round(2)}_price"
+                     end
+
+      notifications << {
+          :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
+                          :amazon_new_price => self.class.show_price(new_price),
+                          :ebay_old_price => self.class.show_price(ebay_price),
+                          :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
+          :product_id => id,
+          :change_title => change_title,
+          :row_css => '',
+      }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
 
       update_attribute(:amazon_price, self.class.show_price(new_price)) unless @@test_workspace
     end
@@ -418,8 +425,8 @@ class Product < ActiveRecord::Base
     end
   end
 
-  # ----------------------
-  # ----------------------
+# ----------------------
+# ----------------------
   private
 
   def self.create_agent
@@ -460,7 +467,7 @@ class Product < ActiveRecord::Base
     price.to_f.round(2)
   end
 
-  # get many options to get price from html product page. first attr is for price, second for prime.
+# get many options to get price from html product page. first attr is for price, second for prime.
   def self.get_match_price(item_page)
     case
       when item_page.search('#price').present? &&
@@ -579,11 +586,23 @@ class Product < ActiveRecord::Base
     wb = p.workbook
 
     wb.add_worksheet(:name => "Products to #{I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :regular)}") do |sheet|
-      sheet.add_row Product.column_names[1..-1]
+      sheet.add_row EXCEL_ATTRS.map{|attr| I18n.t("activerecord.attributes.product.#{attr}")}
       Product.all.each do |product|
-        sheet.add_row product.values_at(Product.column_names[1..-1]).values
+        sheet.add_row product.values_at(EXCEL_ATTRS).values
       end
     end
     p
+  end
+
+  def self.import(path_name, file_extension)
+    formats = %w[.xls .xlsx]
+    if formats.include? file_extension
+      ExcelParser.cols_to_hash(path_name, EXCEL_ATTRS, { :extension => file_extension }).each do |attrs|
+        Product.new(attrs).save(:validate => false)
+      end
+      'messages.excel_uploaded'
+    else
+      'errors.excel_extension'
+    end
   end
 end

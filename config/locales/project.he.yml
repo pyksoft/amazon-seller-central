@@ -36,9 +36,11 @@ he:
     notification_accepted: 'השינוי התבצע בהצלחה!'
     not_exists_product: 'המוצר אינו קיים עוד'
     not_exists_notifications: 'שינוי המוצר נמחק כבר בעבר'
+    excel_uploaded: 'האקסל עלה בהצלחה'
 
   errors:
     diff_error: "%{time}: Have a problem in product id: %{id}, asin number: %{asin_number}, ebay_number: %{ebay_number}\n The errors: %{errors}\n"
+    excel_extension: "הקובץ אינו בפורמט התקין"
 
   notifications:
     compare_complete: '%{compare_time} השוואת המוצרים הסתיימה, ישנם %{new_notifications_count} הודעות חדשות, זמן ריצה: %{work_time}'

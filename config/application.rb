@@ -29,5 +29,7 @@ module AmazonSellerCentral
     config.action_dispatch.perform_deep_munge = false
 
     config.encoding = 'utf-8'
+
+    config.autoload_paths << Rails.root.join('lib')
   end
 end

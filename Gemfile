@@ -34,6 +34,9 @@ gem 'activerecord-import'
 
 gem 'axlsx'
 
+gem 'google_drive'
+gem 'roo'
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 

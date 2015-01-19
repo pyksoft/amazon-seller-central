@@ -1,5 +1,5 @@
 collection :@notifications
-attributes :id, :text,:image_url,:row_css
+attributes :id, :text, :image_url, :row_css, :change_title
 node(:product) { |notification| {
  :title => notification.title || notification.product.try(:title),
  :ebay_item_id => notification.ebay_item_id || notification.product.try(:ebay_item_id),
