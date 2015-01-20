@@ -279,7 +279,8 @@ class Product < ActiveRecord::Base
             :text => I18n.t('notifications.unknown_item', :title => product.title),
             :product_id => product.id,
             :change_title => :unknown_item,
-            :row_css => ''
+            :row_css => '',
+            :skip_accepted => false
         }.merge(product.attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
         # product.destroy!
       end
@@ -307,7 +308,8 @@ class Product < ActiveRecord::Base
       notifications << { :text => I18n.t('notifications.amazon_ending', :title => title),
                          :product_id => id,
                          :change_title => 'amazon_unavailable',
-                         :row_css => ''
+                         :row_css => '',
+                         :skip_accepted => false
       }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
     end
     is_in_stock
@@ -318,14 +320,15 @@ class Product < ActiveRecord::Base
       notifications << { :text => I18n.t('notifications.ebay_ending', :title => title),
                          :product_id => id,
                          :change_title => 'ebay_unavailable',
-                         :row_css => ''
+                         :row_css => '',
+                         :skip_accepted => false
       }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
     end
   end
 
   def price_change?(new_price, ebay_item, notifications)
     if new_price != amazon_price && ebay_item[:item].present?
-      price_change = new_price.to_f - amazon_price.to_f
+      price_change = (new_price.to_f - amazon_price.to_f).round(2).abs
       ebay_price = ebay_item[:item] && ebay_item[:item][:listing_details] && ebay_item[:item][:listing_details][:converted_start_price] || 0
 
       begin
@@ -334,14 +337,14 @@ class Product < ActiveRecord::Base
         UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       end
 
-      # auto price update for products change price under 3$.
+      # auto price update for §products change price under 3$.
       # notification without change title not will show on notifications center.
-      change_title = if price_change.round(2) <= 3.0
-                       change_price(price_change.round(2))
-                       ''
-                     else
-                       "#{price_change.round(2)}_price"
-                     end
+      skip_accepted = if price_change <= 3.0
+                        change_price price_change
+                        true
+                      else
+                        false
+                      end
 
       notifications << {
           :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
@@ -349,8 +352,9 @@ class Product < ActiveRecord::Base
                           :ebay_old_price => self.class.show_price(ebay_price),
                           :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
           :product_id => id,
-          :change_title => change_title,
+          :change_title => "#{price_change}_price",
           :row_css => '',
+          :skip_accepted => skip_accepted,
       }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
 
       update_attribute(:amazon_price, self.class.show_price(new_price)) unless @@test_workspace
@@ -365,8 +369,9 @@ class Product < ActiveRecord::Base
                                                                            end)]),
                          :product_id => id,
                          :change_title => "#{new_prime}_prime",
-                         :row_css => new_prime ? 'green_prime' : 'red_prime' }.
-          merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
+                         :row_css => new_prime ? 'green_prime' : 'red_prime',
+                         :skip_accepted => false
+      }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
     end
   end
 
@@ -586,7 +591,7 @@ class Product < ActiveRecord::Base
     wb = p.workbook
 
     wb.add_worksheet(:name => "Products to #{I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :regular)}") do |sheet|
-      sheet.add_row EXCEL_ATTRS.map{|attr| I18n.t("activerecord.attributes.product.#{attr}")}
+      sheet.add_row EXCEL_ATTRS.map { |attr| I18n.t("activerecord.attributes.product.#{attr}") }
       Product.all.each do |product|
         sheet.add_row product.values_at(EXCEL_ATTRS).values
       end

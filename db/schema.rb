@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141230061145) do
+ActiveRecord::Schema.define(version: 20150120201923) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -66,6 +66,7 @@ ActiveRecord::Schema.define(version: 20141230061145) do
     t.text     "row_css"
     t.text     "amazon_asin_number"
     t.text     "ebay_item_id"
+    t.boolean  "skip_accepted",      default: false
   end
 
   add_index "notifications", ["seen"], name: "index_notifications_on_seen", using: :btree
