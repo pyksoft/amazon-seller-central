@@ -328,7 +328,7 @@ class Product < ActiveRecord::Base
 
   def price_change?(new_price, ebay_item, notifications)
     if new_price != amazon_price && ebay_item[:item].present?
-      price_change = (new_price.to_f - amazon_price.to_f).round(2).abs
+      price_change = (new_price.to_f - amazon_price.to_f).round(2)
       ebay_price = ebay_item[:item] && ebay_item[:item][:listing_details] && ebay_item[:item][:listing_details][:converted_start_price] || 0
 
       begin
@@ -339,7 +339,7 @@ class Product < ActiveRecord::Base
 
       # auto price update for §products change price under 3$.
       # notification without change title not will show on notifications center.
-      skip_accepted = if price_change <= 3.0
+      skip_accepted = if price_change.abs <= 3.0
                         change_price price_change
                         true
                       else
