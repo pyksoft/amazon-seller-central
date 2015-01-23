@@ -506,7 +506,12 @@ class Product < ActiveRecord::Base
   end
 
   def self.one_get_prime(item_page)
-    item_page.search('#merchant-info').first.children.to_s.downcase.include?('amazon')
+    (item_page.search('#merchant-info').present? && item_page.search('#merchant-info').first.children ||
+        item_page.search('#availability_feature_div').present? && item_page.search('#availability_feature_div') ||
+        item_page.search('.buying').present? && item_page.search('.buying')[4].children[6].children.first.children.first.text ||
+        '').
+        to_s.downcase.include?('amazon')
+
   end
 
   def self.one_get_title(item_page)
@@ -519,7 +524,9 @@ class Product < ActiveRecord::Base
     image_page_url = item_page.search('.a-button-toggle').present? &&
         item_page.search('.a-button-toggle')[0].children[0].
             children[1].children[1].attributes['src'].value ||
-        item_page.search('#main-image').present? && item_page.search('#main-image').first.attributes['rel'].value
+        item_page.search('#main-image').present? && item_page.search('#main-image').first.attributes['rel'].value.present? &&
+            item_page.search('#main-image').first.attributes['rel'].value ||
+        item_page.search('#holderMainImage').search('#main-image-nonjs').first.attributes['src'].value
     image_page_url.present? ? image_page_url[0...image_page_url =~ /_/] + '_SL160_.jpg' : '' # remove all _SR38,50_ -> Small image
   end
 
