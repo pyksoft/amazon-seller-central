@@ -422,6 +422,8 @@ class Product < ActiveRecord::Base
           change_prime(change_title.gsub('_prime', '') == 'true')
         when /price/
           change_price(change_title.gsub('_price', '').to_f)
+        when /unknown_item/
+          amazon_out_of_stock
       end
 
       { :msg => I18n.t('messages.notification_accepted') }
