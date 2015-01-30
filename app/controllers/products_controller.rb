@@ -51,7 +51,7 @@ class ProductsController < ApplicationController
     respond_to do |format|
       format.xlsx do
         send_data Product.export.to_stream.read,
-                  :filename => "products_#{I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :regular)}",
+                  :filename => "products_#{I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :regular)}.xls",
                   :type => 'application/vnd.openxmlformates-officedocument.spreadsheetml.sheet'
       end
     end
