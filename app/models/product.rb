@@ -110,7 +110,7 @@ class Product < ActiveRecord::Base
                           "sec: #{seconds}, Notification size:#{notifications.size},extra: #{extra_content}",
                           'roiekoper@gmail.com').deliver
 
-    List.update_compare_count
+    List.update_compare_count unless get_notifications_log.present? && (compare_count % 2).zero?
     @@thread_compare_working = false
 
     Notification.where('seen is null OR seen = false').update_all(:seen => true)
@@ -263,7 +263,12 @@ class Product < ActiveRecord::Base
     log = []
     pages = []
 
-    Product.all.each do |product|
+    reviewed_products = get_reviewed_products
+
+
+    p reviewed_products
+    p Product.where("id not in (#{reviewed_products.present? ? reviewed_products.join(',') : '0'})").to_sql
+    Product.where("id not in (#{reviewed_products.present? ? reviewed_products.join(',') : '0'})").each do |product|
       p "Over items: #{count}"
       begin
         product.compare_with_url agent, log, pages, notifications
@@ -286,11 +291,15 @@ class Product < ActiveRecord::Base
       end
 
       set_progress_count count
+      p notifications
+      p get_notifications_log
+      set_notifications_log(notifications.join('^^'))
       count += 1
 
     end
 
     UserMailer.send_html_email(pages.map { |p| p[:page] }.join(','), pages.map { |p| p[:product] }.join(','), 'roiekoper@gmail.com').deliver
+    reset_notifications_log
 
     extra_content = "Over on #{count} products / #{Product.count}"
     UserMailer.send_email("[#{notifications.join(',')}]", 'End Compare Each Product', 'roiekoper@gmail.com').deliver

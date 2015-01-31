@@ -94,3 +94,15 @@ def set_progress_count(product_index)
   percent = product_index.percent_of(get_products_count || set_products_count).round
   redis_working? && REDIS.set(:progress_count, percent)
 end
+
+def reset_notifications_log
+  redis_working? && REDIS.set(:notifications_log, '')
+end
+
+def set_notifications_log(notifications_log)
+  redis_working? && REDIS.set(:notifications_log, notifications_log)
+end
+
+def get_notifications_log
+  redis_working? && REDIS.get(:notifications_log)
+end

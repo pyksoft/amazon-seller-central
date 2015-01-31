@@ -1,5 +1,5 @@
 class Product
-  def compare_with_url(agent,log,pages,notifications)
+  def compare_with_url(agent, log, pages, notifications)
     item_page = agent.get(item_url)
     ebay_item = Ebayr.call(:GetItem, :ItemID => ebay_item_id, :auth_token => Ebayr.auth_token)
     log << "amazon_asin_number: #{amazon_asin_number},ebay_item_id: #{ebay_item_id},id: #{id}, Amazon stock: #{Product.one_get_stock(item_page)}, Amazon In Stock? #{Product.in_stock?(Product.one_get_stock(item_page))}, Price: #{Product.one_get_price(item_page)}, Prime: #{Product.one_get_prime(item_page)}"
@@ -23,6 +23,15 @@ class Product
         price_change?(Product.one_get_price(item_page), ebay_item, notifications)
         prime_change?(Product.one_get_prime(item_page), notifications)
       end
+    end
+  end
+
+  def self.get_reviewed_products
+    notifications_log = get_notifications_log.split('^^')
+    if notifications_log.present?
+      notifications_log.map { |notification| eval(notification)[:product_id] }
+    else
+      []
     end
   end
 end
