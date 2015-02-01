@@ -86,6 +86,8 @@ class Product < ActiveRecord::Base
     set_products_count
     p "*** #{compare_count} ***"
 
+    reset_notifications_log unless get_notifications_log # set empty string to notifications log if not exists
+
     seconds = Benchmark.realtime do
       Product.transaction do
         notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
@@ -274,8 +276,6 @@ class Product < ActiveRecord::Base
     reviewed_products = get_reviewed_products
 
 
-    p reviewed_products
-    p Product.where("id not in (#{reviewed_products.present? ? reviewed_products.join(',') : '0'})").to_sql
     Product.where("id not in (#{reviewed_products.present? ? reviewed_products.join(',') : '0'})").each do |product|
       p "Over items: #{count}"
       begin
@@ -299,8 +299,6 @@ class Product < ActiveRecord::Base
       end
 
       set_progress_count count
-      p notifications
-      p get_notifications_log
       set_notifications_log(notifications.join('^^'))
       count += 1
 
