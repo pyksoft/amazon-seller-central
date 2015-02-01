@@ -11,6 +11,14 @@ class Product < ActiveRecord::Base
 
   require 'compare_products'
 
+  def self.thread_compare_working
+    @@thread_compare_working
+  end
+
+  def self.thread_compare_working= status
+    @@thread_compare_working = status
+  end
+
   def self.test_workspace
     @@test_workspace
   end
