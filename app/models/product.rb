@@ -276,6 +276,7 @@ class Product < ActiveRecord::Base
     reviewed_products = get_reviewed_products
 
     if reviewed_products.present?
+      UserMailer.send_email("Reviewed Products Count:#{reviewed_products.count}", 'The prime compare was stuck', 'roiekoper@gmail.com').deliver
       notifications = reviewed_products
       count = reviewed_products.count
     end
