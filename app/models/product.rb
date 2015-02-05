@@ -275,8 +275,13 @@ class Product < ActiveRecord::Base
 
     reviewed_products = get_reviewed_products
 
+    if reviewed_products.present?
+      notifications = reviewed_products
+      count = reviewed_products.count
+    end
 
-    Product.where("id not in (#{reviewed_products.present? ? reviewed_products.join(',') : '0'})").each do |product|
+
+    Product.where("id not in (#{reviewed_products.present? ? reviewed_products.map{|product| product[:product_id]}.join(',') : '0'})").each do |product|
       p "Over items: #{count}"
       begin
         product.compare_with_url agent, log, pages, notifications
