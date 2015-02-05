@@ -29,7 +29,7 @@ class Product
   def self.get_reviewed_products
     notifications_log = get_notifications_log.split('^^')
     if notifications_log.present?
-      notifications_log.map { |notification| eval(notification)[:product_id] }
+      notifications_log.map { |notification| eval(notification) }
     else
       []
     end
