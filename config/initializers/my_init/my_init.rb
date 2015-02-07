@@ -106,3 +106,16 @@ end
 def get_notifications_log
   redis_working? && REDIS.get(:notifications_log)
 end
+
+def get_products_compared_ids
+  redis_working? && (REDIS.get(:products_compared_ids) || '').split(',')
+end
+
+def reset_products_compared_ids
+  redis_working? && REDIS.set(:products_compared_ids, '')
+end
+
+def set_products_compared_ids(product_compared_id)
+  products_compared_ids = get_products_compared_ids
+  redis_working? && REDIS.set(:products_compared_ids, (products_compared_ids << product_compared_id).join(','))
+end

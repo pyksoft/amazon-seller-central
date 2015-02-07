@@ -276,13 +276,14 @@ class Product < ActiveRecord::Base
     reviewed_products = get_reviewed_products
 
     if reviewed_products.present?
-      UserMailer.send_email("Reviewed Products Count:#{reviewed_products.count}", 'The prime compare was stuck', 'roiekoper@gmail.com').deliver
+      count = get_products_compared_ids.count
       notifications = reviewed_products
-      count = reviewed_products.count
+      UserMailer.send_email("Reviewed Products Count:#{count}, Notifications size: #{notifications.size}", 'The prime compare was stuck', 'roiekoper@gmail.com').deliver
+    else
+      reset_products_compared_ids
     end
 
-
-    Product.where("id not in (#{reviewed_products.present? ? reviewed_products.map{|product| product[:product_id]}.join(',') : '0'})").each do |product|
+    Product.where("id not in (#{reviewed_products.present? ? get_products_compared_ids.join(',') : '0'})").each do |product|
       p "Over items: #{count}"
       begin
         product.compare_with_url agent, log, pages, notifications
@@ -306,6 +307,9 @@ class Product < ActiveRecord::Base
 
       set_progress_count count
       set_notifications_log(notifications.join('^^'))
+
+      set_products_compared_ids product.id
+
       count += 1
 
     end
@@ -617,7 +621,7 @@ class Product < ActiveRecord::Base
   end
 
   def self.export
-    p = Axlsx::Package.new
+    package = Axlsx::Package.new
     wb = p.workbook
 
     wb.add_worksheet(:name => "Products to #{I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :regular)}") do |sheet|
@@ -626,7 +630,7 @@ class Product < ActiveRecord::Base
         sheet.add_row product.values_at(EXCEL_ATTRS).values
       end
     end
-    p
+    package
   end
 
   def self.import(path_name, file_extension)
