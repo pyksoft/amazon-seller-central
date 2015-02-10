@@ -509,9 +509,9 @@ class Product < ActiveRecord::Base
           item_page.search('#price').search('#priceblock_saleprice').present?
         [item_page.search('#price').search('#priceblock_saleprice'), item_page.search('#price')]
       when item_page.search('#price').present? &&
-          item_page.search('#price').search('#priceblock_dealprice')
-        [item_page.search('#price').search('#priceblock_dealprice').first.children[1], item_page.search('#price').search('#priceblock_dealprice')]
-      when item_page.search('#actualPriceRow')
+          item_page.search('#price').search('#priceblock_dealprice').present?
+        [item_page.search('#price').search('#priceblock_dealprice').first, item_page.search('#price').search('#priceblock_dealprice')]
+      when item_page.search('#actualPriceRow').present?
         [item_page.search('#actualPriceRow').search('.priceLarge'), item_page.search('#actualPriceRow')]
       else
         []
@@ -535,7 +535,8 @@ class Product < ActiveRecord::Base
   def self.one_get_prime(item_page)
     (item_page.search('#merchant-info').present? && item_page.search('#merchant-info').first.children ||
         item_page.search('#availability_feature_div').present? && item_page.search('#availability_feature_div') ||
-        item_page.search('.buying').present? && item_page.search('.buying')[4].children[6].children.first.children.first.text ||
+        (item_page.search('.buying').present? && item_page.search('.buying')[4].children[6].present? &&
+            item_page.search('.buying')[4].children[6].children.first.children.first.text) ||
         '').
         to_s.downcase.include?('amazon')
 

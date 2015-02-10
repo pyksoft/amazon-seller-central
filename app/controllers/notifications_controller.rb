@@ -10,7 +10,8 @@ class NotificationsController < ApplicationController
 
   def index
     @notifications = Notification.sorted_notifications
-    respond_with(@notifications)
+    @notifications = Notification.create(:text => 'Empty Notification') if @notifications.empty?
+    respond_with @notifications
   end
 
   def change_accepted
@@ -20,10 +21,10 @@ class NotificationsController < ApplicationController
                else
                  { :errs => I18n.t('messages.not_exists_notifications') }
                end
-    render({ :json => response})
+    render :json => response
   end
 
   def progress_count
-    render({ :json => {:progress_count => get_progress_count}})
+    render :json => { :progress_count => get_progress_count }
   end
 end
