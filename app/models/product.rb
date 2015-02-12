@@ -478,7 +478,7 @@ class Product < ActiveRecord::Base
 
     if page.uri.to_s.include?('https://www.amazon.com/ap/dcq?ie=UTF8&dcq.arb.value')
       zicode_form = page.forms.first
-      zicode_form['dcq_question_subjective_1'] = '11365'
+      zicode_form['dcq_question_subjective_1'] = '11229'
       zipcode_page = zicode_form.submit
     end
 
