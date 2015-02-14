@@ -623,7 +623,7 @@ class Product < ActiveRecord::Base
 
   def self.export
     package = Axlsx::Package.new
-    wb = p.workbook
+    wb = package.workbook
 
     wb.add_worksheet(:name => "Products to #{I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :regular)}") do |sheet|
       sheet.add_row EXCEL_ATTRS.map { |attr| I18n.t("activerecord.attributes.product.#{attr}") }
