@@ -186,84 +186,96 @@ class Product < ActiveRecord::Base
 
   def self.compare_wish_list
     agent = create_agent
-    done = false
     page = 1
     count = 0
     notifications = []
     all_assins = []
     pages = []
     product = nil
-    wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
-    last_page = YAML.load((wishlist.search('.a-').last && wishlist.search('.a-').last.attributes['data-pag-trigger'].value).to_s)
-    last_page = last_page && last_page['page'] || 1
-    set_products_count last_page.to_i * 25
+    last_page = nil
+    extra_content = []
+    all_assins = []
+
+    wishlists_url = find_all_wishlists(agent)
+    wishlists = wishlists_url.map{|url| agent.get "#{url}?page=#{page}"}
+    products_count = wishlists.map do |wishlist|
+      last_page = YAML.load((wishlist.search('.a-').last && wishlist.search('.a-').last.attributes['data-pag-trigger'].value).to_s)
+      (last_page && last_page['page'] || 0) * 25
+    end.sum
+
+    set_products_count products_count
     sleep(2)
 
     begin
-      while (!done) do
-        wishlist = agent.get 'http://www.amazon.com/gp/registry/wishlist/?page=' + page.to_s
-        items = wishlist.search('.g-item-sortable')
+      wishlists.zip(wishlists_url).each do |wishlist,wishlist_url|
 
-        if items.empty?
-          if page < last_page
-            compare_wish_list
-          else
-            done = true
-            break
-          end
-        end
+        done = false
+        page = 1
 
-        p "item size: #{items.size}"
-        p "Page: #{page} / #{last_page}"
-        prices_html = items.search('.price-section')
-        availability_html = items.search('.itemAvailability')
-        products = Product.where(:amazon_asin_number => prices_html.map do |price_html|
-                                   YAML.load(price_html.attributes['data-item-prime-info'].value)['asin']
-                                 end)
+        while (!done) do
+          items = wishlist.search('.g-item-sortable')
+          last_page = YAML.load((wishlist.search('.a-').last && wishlist.search('.a-').last.attributes['data-pag-trigger'].value).to_s)
+          last_page = last_page && last_page['page'] || 1
 
-        all_items = prices_html.zip(availability_html)
-
-        all_items.map do |price, stock|
-          asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
-          product = products.find { |pro| pro.amazon_asin_number == asin_number }
-
-          done = true if all_assins.include?(asin_number) && page >= last_page
-          all_assins << asin_number
-          if product
-            if product.prefer_url
-              product.compare_with_url create_agent, [], pages, notifications
+          if items.empty?
+            if page < last_page
+              compare_wish_list
             else
-              ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-              product.ebay_stock_change(ebay_item, notifications)
-              # if amazon in stock check changes in price.
-              if product.amazon_stock_change?(get_value(stock), notifications)
-                product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
-              end
+              done = true
+              break
             end
           end
 
-          count +=1
-          set_progress_count count
+          p "item size: #{items.size}"
+          p "Page: #{page} / #{last_page}"
+          prices_html = items.search('.price-section')
+          availability_html = items.search('.itemAvailability')
+          products = Product.where(:amazon_asin_number => prices_html.map do |price_html|
+                                     YAML.load(price_html.attributes['data-item-prime-info'].value)['asin']
+                                   end)
+
+          all_items = prices_html.zip(availability_html)
+
+          all_items.map do |price, stock|
+            asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
+            product = products.find { |pro| pro.amazon_asin_number == asin_number }
+
+            done = true if all_assins.include?(asin_number) && page >= last_page
+            all_assins << asin_number
+            if product
+              if product.prefer_url
+                product.compare_with_url create_agent, [], pages, notifications
+              else
+                ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
+                product.ebay_stock_change(ebay_item, notifications)
+                # if amazon in stock check changes in price.
+                if product.amazon_stock_change?(get_value(stock), notifications)
+                  product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
+                end
+              end
+            end
+
+            count +=1
+            set_progress_count count
+          end
+          page += 1
+          wishlist = agent.get "#{wishlist_url.gsub("page=#{page - 1}",'')}?page=#{page}"
         end
-        page += 1
+
+        extra_content << "WishList over on pages:#{last_page}/ #{page}"
       end
 
     rescue Exception => e
-      UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.id}, Page: #{page}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
+      UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.try(:id)}, Page: #{page}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       write_errors I18n.t('errors.diff_error',
                           :time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :error),
-                          :id => product.id,
-                          :asin_number => product.amazon_asin_number,
-                          :ebay_number => product.ebay_item_id,
-                          :errors => "#{product.errors.full_messages.join(' ,')}, \n Exception errors:#{e.message}")
+                          :id => product.try(:id),
+                          :asin_number => product.try(:amazon_asin_number),
+                          :ebay_number => product.try(:ebay_item_id),
+                          :errors => "#{(product.present? ? product.errors.full_messages : []).join(' ,')}, \n Exception errors:#{e.message}")
     end
 
-    extra_content = "Over on #{(page - 1)} pages, out of #{last_page}"
-    if page - 1 != last_page
-      UserMailer.send_email("Notifications size: #{notifications.count}", extra_content, 'roiekoper@gmail.com').deliver
-    end
-
-    [notifications, extra_content]
+    [notifications, "Compare result: #{extra_content.join(', ')}"]
   end
 
   def self.compare_each_product
@@ -558,69 +570,6 @@ class Product < ActiveRecord::Base
     image_page_url.present? ? image_page_url[0...image_page_url =~ /_/] + '_SL160_.jpg' : '' # remove all _SR38,50_ -> Small image
   end
 
-  def self.upload_wish_list
-    products_text = 'B00F8VBJTM, 251645745168
-                      B001A5W53E, 261487157757
-                      B00267SQVU, 261487161024'.split("\n").select do |details|
-      details = details.split(',').map(&:strip)
-      details.size == 2 && details.first.length == 10 && details.last.length == 12
-    end
-
-    # agent = Product.create_agent
-    errors = []
-
-    # over on all current products and update price & prime.
-    # Product.all.each_with_index do |product|
-    #   begin
-    #     item_page = agent.get("http://www.amazon.com/dp/#{product.amazon_asin_number}")
-    #     product.amazon_asin_number = product.amazon_asin_number.upcase
-    #     product.amazon_price = Product.one_get_price(item_page)
-    #     product.prime = Product.one_get_prime(item_page)
-    #     product.save(:validate => false)
-    #   rescue Exception => e
-    #     p "Error #{e.message} in #{product.id} product"
-    #   end
-    # end
-
-
-    p 'finished update all current products'
-    p "start create new products from file, #{products_text.length} products"
-    p 'without over al current products'
-
-    Thread.new do
-      products_text.in_groups_of(100).each_with_index do |product_groups, g_i|
-        product_groups.each_with_index do |product_details, i|
-          begin
-            p i
-            asin_number, ebay_number = product_details.split(',').map(&:strip)
-            error = new(:amazon_asin_number => asin_number,
-                        :ebay_item_id => ebay_number).create_with_requests.
-                merge(:product => { :ebay_number => ebay_number, :asin_number => asin_number }, :index => i)
-            p error if error[:msg]
-            errors << error
-          rescue Exception => e
-            errors << "Error #{e.message} in #{i} -> #{asin_number},#{ebay_number}"
-          end
-        end
-
-
-        File.open("#{Rails.root}/log/add_wishlist_errors.txt", 'a') do |f|
-          errors.each do |error|
-            f << "#{error[:index]}. #{error.except(:index)}\n"
-          end
-        end
-
-        UserMailer.send_email(errors.join("\n,
-"),
-                              "Finish #{g_i} group!, errors number: #{errors.length}",
-                              'roiekoper@gmail.com').deliver
-
-      end
-
-      p "Finish upload all file, errors size #{errors.size}"
-    end
-  end
-
   def self.export
     package = Axlsx::Package.new
     wb = package.workbook
@@ -643,6 +592,21 @@ class Product < ActiveRecord::Base
       'messages.excel_uploaded'
     else
       'errors.excel_extension'
+    end
+  end
+
+  def self.find_all_wishlists(agent)
+    wishlists = agent.get('http://www.amazon.com/gp/registry/wishlist/ref=nav_wishlist_btn').
+        search('#left-nav').search('a')
+    if wishlists.present?
+      last_wishlist_index = wishlists.to_a.index do |wishlist|
+        wishlist.children.children.text.include?('Manage your lists')
+      end.to_i - 1
+      wishlists[3..last_wishlist_index].map do |wishlist|
+        "http://www.amazon.com#{wishlist.attributes['href'].value}"
+      end
+    else
+      []
     end
   end
 end
