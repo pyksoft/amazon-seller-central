@@ -226,7 +226,7 @@ class Product < ActiveRecord::Base
             end
           end
 
-          p "item size: #{items.size}"
+          p "item size: #{items.size} "
           p "Page: #{page} / #{last_page}"
           prices_html = items.search('.price-section')
           availability_html = items.search('.itemAvailability')
