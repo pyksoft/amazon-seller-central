@@ -89,7 +89,7 @@ class Product < ActiveRecord::Base
     reset_notifications_log unless get_notifications_log # set empty string to notifications log if not exists
 
     seconds = Benchmark.realtime do
-      Product.transaction do
+      transaction do
         notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
       end
 
@@ -136,11 +136,11 @@ class Product < ActiveRecord::Base
   def create_with_requests
     begin
       if valid?
-        item_page = self.class.create_agent.get(item_url)
-        self.amazon_price = self.class.one_get_price(item_page)
-        self.prime = self.class.one_get_prime(item_page).present?
-        self.image_url = self.class.one_get_image_url(item_page)
-        self.title = self.class.one_get_title(item_page)
+        item_page = Product.create_agent.get(item_url)
+        self.amazon_price = Product.one_get_price(item_page)
+        self.prime = Product.one_get_prime(item_page).present?
+        self.image_url = Product.one_get_image_url(item_page)
+        self.title = Product.one_get_title(item_page)
         save!
         { :msg => I18n.t('messages.product_created') }
       else
@@ -157,15 +157,15 @@ class Product < ActiveRecord::Base
         update_attribute main_attr, params[:product][main_attr].strip.upcase
       end
 
-      item_page = self.class.create_agent.get(item_url)
+      item_page = Product.create_agent.get(item_url)
 
       [
           [:url_page],
           [:prefer_url],
-          [:amazon_price, self.class.one_get_price(item_page)],
-          [:prime, self.class.one_get_prime(item_page).present?],
-          [:image_url, self.class.one_get_image_url(item_page)],
-          [:title, self.class.one_get_title(item_page)]
+          [:amazon_price, Product.one_get_price(item_page)],
+          [:prime, Product.one_get_prime(item_page).present?],
+          [:image_url, Product.one_get_image_url(item_page)],
+          [:title, Product.one_get_title(item_page)]
       ].each do |attr, page_value|
         self.send("#{attr}=", params[:product][attr].present? ? params[:product][attr] : page_value)
       end
@@ -189,7 +189,6 @@ class Product < ActiveRecord::Base
     page = 1
     count = 0
     notifications = []
-    all_assins = []
     pages = []
     product = nil
     last_page = nil
@@ -197,7 +196,9 @@ class Product < ActiveRecord::Base
     all_assins = []
 
     wishlists_url = find_all_wishlists(agent)
-    wishlists = wishlists_url.map{|url| agent.get "#{url}?page=#{page}"}
+    p wishlists_url
+    wishlists = wishlists_url.map { |url| agent.get "#{url}?page=#{page}" }
+    # calc the products count to progress bar percent
     products_count = wishlists.map do |wishlist|
       last_page = YAML.load((wishlist.search('.a-').last && wishlist.search('.a-').last.attributes['data-pag-trigger'].value).to_s)
       (last_page && last_page['page'] || 0) * 25
@@ -207,64 +208,64 @@ class Product < ActiveRecord::Base
     sleep(2)
 
     begin
-      wishlists.zip(wishlists_url).each do |wishlist,wishlist_url|
+      wishlists.zip(wishlists_url).each do |wishlist, wishlist_url|
 
         done = false
         page = 1
+        last_page = YAML.load((wishlist.search('.a-').last &&
+                                  wishlist.search('.a-').last.attributes['data-pag-trigger'].value).to_s)
+        last_page = last_page && last_page['page'] || 1
 
         while (!done) do
           items = wishlist.search('.g-item-sortable')
-          last_page = YAML.load((wishlist.search('.a-').last && wishlist.search('.a-').last.attributes['data-pag-trigger'].value).to_s)
-          last_page = last_page && last_page['page'] || 1
 
-          if items.empty?
-            if page < last_page
-              compare_wish_list
-            else
-              done = true
-              break
-            end
+          if items.empty? || page > last_page
+            done = true
+            page -= 1 if page > 1
+            break
           end
 
           p "item size: #{items.size} "
           p "Page: #{page} / #{last_page}"
           prices_html = items.search('.price-section')
           availability_html = items.search('.itemAvailability')
-          products = Product.where(:amazon_asin_number => prices_html.map do |price_html|
-                                     YAML.load(price_html.attributes['data-item-prime-info'].value)['asin']
-                                   end)
+          products = where(:amazon_asin_number => prices_html.map do |price_html|
+                             YAML.load(price_html.attributes['data-item-prime-info'].value)['asin']
+                           end)
 
-          all_items = prices_html.zip(availability_html)
-
-          all_items.map do |price, stock|
+          prices_html.zip(availability_html).map do |price, stock|
             asin_number = YAML.load(price.attributes['data-item-prime-info'].value)['asin']
             product = products.find { |pro| pro.amazon_asin_number == asin_number }
-
-            done = true if all_assins.include?(asin_number) && page >= last_page
-            all_assins << asin_number
-            if product
-              if product.prefer_url
-                product.compare_with_url create_agent, [], pages, notifications
-              else
-                ebay_item = Ebayr.call(:GetItem, :ItemID => product.ebay_item_id, :auth_token => Ebayr.auth_token)
-                product.ebay_stock_change(ebay_item, notifications)
-                # if amazon in stock check changes in price.
-                if product.amazon_stock_change?(get_value(stock), notifications)
-                  product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
+            if all_assins.exclude?(asin_number)
+              all_assins << asin_number
+              if product
+                if product.prefer_url
+                  product.compare_with_url create_agent, [], pages, notifications
+                else
+                  ebay_item = Ebayr.call(:GetItem,
+                                         :ItemID => product.ebay_item_id,
+                                         :auth_token => Ebayr.auth_token)
+                  product.ebay_stock_change(ebay_item, notifications)
+                  # if amazon in stock check changes in price.
+                  if product.amazon_stock_change?(get_value(stock), notifications)
+                    product.price_change?(get_value(price)[1..-1].to_f, ebay_item, notifications)
+                  end
                 end
               end
+              count +=1
+              set_progress_count count
             end
-
-            count +=1
-            set_progress_count count
           end
           page += 1
-          wishlist = agent.get "#{wishlist_url.gsub("page=#{page - 1}",'')}?page=#{page}"
+          wishlist = agent.get "#{wishlist_url.gsub("page=#{page - 1}", '')}?page=#{page}"
         end
 
         extra_content << "WishList over on pages:#{last_page}/ #{page}"
       end
 
+    rescue Errno::ETIMEDOUT
+      UserMailer.send_email("Product_id: #{product.try(:id)}, Page: #{page}", 'The compare wishlist broke down', 'roiekoper@gmail.com').deliver
+      compare_wish_list
     rescue Exception => e
       UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.try(:id)}, Page: #{page}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
       write_errors I18n.t('errors.diff_error',
@@ -295,7 +296,7 @@ class Product < ActiveRecord::Base
       reset_products_compared_ids
     end
 
-    Product.where("id not in (#{reviewed_products.present? ? get_products_compared_ids.join(',') : '0'})").each do |product|
+    where("id not in (#{reviewed_products.present? ? get_products_compared_ids.join(',') : '0'})").each do |product|
       p "Over items: #{count}"
       begin
         product.compare_with_url agent, log, pages, notifications
@@ -340,7 +341,7 @@ class Product < ActiveRecord::Base
   end
 
   def amazon_stock_change?(stock, notifications)
-    is_in_stock = self.class.in_stock?(stock)
+    is_in_stock = Product.in_stock?(stock)
     unless is_in_stock
       notifications << { :text => I18n.t('notifications.amazon_ending', :title => title),
                          :product_id => id,
@@ -353,7 +354,7 @@ class Product < ActiveRecord::Base
   end
 
   def ebay_stock_change(ebay_item, notifications)
-    if self.class.ebay_product_ending?(ebay_item)
+    if Product.ebay_product_ending?(ebay_item)
       notifications << { :text => I18n.t('notifications.ebay_ending', :title => title),
                          :product_id => id,
                          :change_title => 'ebay_unavailable',
@@ -384,17 +385,17 @@ class Product < ActiveRecord::Base
                       end
 
       notifications << {
-          :text => I18n.t('notifications.amazon_price', :amazon_old_price => self.class.show_price(amazon_price),
-                          :amazon_new_price => self.class.show_price(new_price),
-                          :ebay_old_price => self.class.show_price(ebay_price),
-                          :ebay_new_price => self.class.show_price(ebay_price.to_f + price_change)),
+          :text => I18n.t('notifications.amazon_price', :amazon_old_price => Product.show_price(amazon_price),
+                          :amazon_new_price => Product.show_price(new_price),
+                          :ebay_old_price => Product.show_price(ebay_price),
+                          :ebay_new_price => Product.show_price(ebay_price.to_f + price_change)),
           :product_id => id,
           :change_title => "#{price_change}_price",
           :row_css => '',
           :skip_accepted => skip_accepted,
       }.merge(attributes.slice(*%w[title image_url ebay_item_id amazon_asin_number]))
 
-      update_attribute(:amazon_price, self.class.show_price(new_price)) unless @@test_workspace
+      update_attribute(:amazon_price, Product.show_price(new_price)) unless @@test_workspace
     end
   end
 
@@ -588,7 +589,7 @@ class Product < ActiveRecord::Base
     formats = %w[.xls .xlsx]
     if formats.include? file_extension
       ExcelParser.cols_to_hash(path_name, EXCEL_ATTRS, { :extension => file_extension }).each do |attrs|
-        Product.new(attrs).save(:validate => false)
+        new(attrs).save(:validate => false)
       end
       'messages.excel_uploaded'
     else
@@ -603,11 +604,12 @@ class Product < ActiveRecord::Base
       last_wishlist_index = wishlists.to_a.index do |wishlist|
         wishlist.children.children.text.include?('Manage your lists')
       end.to_i - 1
-      wishlists[3..last_wishlist_index].map do |wishlist|
+      wishlists[2..last_wishlist_index].map do |wishlist|
         "http://www.amazon.com#{wishlist.attributes['href'].value}"
       end
     else
       []
     end
   end
+
 end

@@ -2,7 +2,7 @@ class Notification < ActiveRecord::Base
   belongs_to :product
 
   def self.sorted_notifications
-    unseen_notifications = Notification.where('seen is null OR seen = false')
+    unseen_notifications = Notification.where('seen is null OR seen = false').includes(:product)
 
     sorted_notifications = unseen_notifications.select do |notification|
       notification.change_title && notification.change_title.include?('price')
@@ -40,5 +40,24 @@ class Notification < ActiveRecord::Base
       ids = Notification.where(:seen => true).limit(2000).pluck(:id)
       Notification.where(:id => ids).delete_all
     end
+  end
+
+  def self.notifications_json
+    notifications = sorted_notifications
+    notifications = create(:text => 'Empty Notification') if notifications.empty?
+
+    {
+        :notifications => notifications.inject([]) do |arr, notification|
+          arr << notification.values_at(%i[id text image_url row_css change_title skip_accepted]).merge(
+              :product => {
+                  :title => notification.title || notification.product.try(:title),
+                  :amazon_asin_number => notification.amazon_asin_number || notification.product.try(:amazon_asin_number),
+                  :amazon_url => notification.product.try(:item_url) || Product.new(notification.values_at(:amazon_asin_number)).item_url
+              }
+          )
+        end,
+        :progress_count => get_progress_count,
+        :compare_title => ((List.compare_count % 2).zero? ? 'Prime' : 'Wishlist') + ' Compare'
+    }
   end
 end

@@ -9,9 +9,7 @@ class NotificationsController < ApplicationController
   end
 
   def index
-    @notifications = Notification.sorted_notifications
-    @notifications = Notification.create(:text => 'Empty Notification') if @notifications.empty?
-    respond_with @notifications
+    render :json => Notification.notifications_json
   end
 
   def change_accepted
