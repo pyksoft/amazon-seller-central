@@ -95,14 +95,10 @@ class Product < ActiveRecord::Base
 
       UserMailer.send_email('',
                             'Finished Transaction',
-                            'roiekoper@gmail.com').deliver
+                            'idanshviro@gmail.com').deliver
     end
 
-    emails_to = ['roiekoper@gmail.com']
-
-    unless @@test_workspace
-      emails_to << 'idanshviro@gmail.com'
-    end
+    emails_to = ['idanshviro@gmail.com']
 
     emails_to.each do |to|
       UserMailer.send_email("--- #{extra_content} \n ---, Checking no': #{compare_count}",
@@ -118,7 +114,7 @@ class Product < ActiveRecord::Base
 
     UserMailer.send_email('Compare Result',
                           "sec: #{seconds}, Notification size:#{notifications.size},extra: #{extra_content}",
-                          'roiekoper@gmail.com').deliver
+                          'idanshviro@gmail.com').deliver
 
     List.update_compare_count unless get_notifications_log.present? && (compare_count % 2).zero?
     @@thread_compare_working = false
@@ -130,7 +126,7 @@ class Product < ActiveRecord::Base
 
     UserMailer.send_email('',
                           "Notification unseen size: #{Notification.where(:seen => nil).count}, Notification size: #{Notification.count}",
-                          'roiekoper@gmail.com').deliver
+                          'idanshviro@gmail.com').deliver
   end
 
   def create_with_requests
@@ -264,10 +260,10 @@ class Product < ActiveRecord::Base
       end
 
     rescue Errno::ETIMEDOUT
-      UserMailer.send_email("Product_id: #{product.try(:id)}, Page: #{page}", 'The compare wishlist broke down', 'roiekoper@gmail.com').deliver
+      UserMailer.send_email("Product_id: #{product.try(:id)}, Page: #{page}", 'The compare wishlist broke down', 'idanshviro@gmail.com').deliver
       compare_wish_list
     rescue Exception => e
-      UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.try(:id)}, Page: #{page}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
+      UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.try(:id)}, Page: #{page}", 'Exception in compare wishlist', 'idanshviro@gmail.com').deliver
       write_errors I18n.t('errors.diff_error',
                           :time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :error),
                           :id => product.try(:id),
@@ -291,7 +287,7 @@ class Product < ActiveRecord::Base
     if reviewed_products.present?
       count = get_products_compared_ids.count
       notifications = reviewed_products
-      UserMailer.send_email("Reviewed Products Count:#{count}, Notifications size: #{notifications.size}", 'The prime compare was stuck', 'roiekoper@gmail.com').deliver
+      UserMailer.send_email("Reviewed Products Count:#{count}, Notifications size: #{notifications.size}", 'The prime compare was stuck', 'idanshviro@gmail.com').deliver
     else
       reset_products_compared_ids
     end
@@ -306,7 +302,7 @@ class Product < ActiveRecord::Base
         # delay between each 100 products of 10 seconds
         sleep(10) if (count % 100).zero?
       rescue Exception => e
-        UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.id}", 'Exception in prime compare', 'roiekoper@gmail.com').deliver
+        UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.id}", 'Exception in prime compare', 'idanshviro@gmail.com').deliver
 
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
@@ -327,11 +323,11 @@ class Product < ActiveRecord::Base
 
     end
 
-    UserMailer.send_html_email(pages.map { |p| p[:page] }.join(','), pages.map { |p| p[:product] }.join(','), 'roiekoper@gmail.com').deliver
+    UserMailer.send_html_email(pages.map { |p| p[:page] }.join(','), pages.map { |p| p[:product] }.join(','), 'idanshviro@gmail.com').deliver
     reset_notifications_log
 
     extra_content = "Over on #{count} products / #{Product.count}"
-    UserMailer.send_email("[#{notifications.join(',')}]", 'End Compare Each Product', 'roiekoper@gmail.com').deliver
+    UserMailer.send_email("[#{notifications.join(',')}]", 'End Compare Each Product', 'idanshviro@gmail.com').deliver
 
     [notifications, extra_content]
   end
@@ -372,7 +368,7 @@ class Product < ActiveRecord::Base
       begin
         ebay_item[:item][:listing_details][:converted_start_price]
       rescue Exception => e
-        UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'roiekoper@gmail.com').deliver
+        UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'idanshviro@gmail.com').deliver
       end
 
       # auto price update for §products change price under 3$.

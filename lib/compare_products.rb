@@ -5,7 +5,7 @@ class Product
     log << "amazon_asin_number: #{amazon_asin_number},ebay_item_id: #{ebay_item_id},id: #{id}, Amazon stock: #{Product.one_get_stock(item_page)}, Amazon In Stock? #{Product.in_stock?(Product.one_get_stock(item_page))}, Price: #{Product.one_get_price(item_page)}, Prime: #{Product.one_get_prime(item_page)}"
 
     if item_page.body.include?('dcq_question_subjective_1')
-      UserMailer.send_email("Exception in item page: #{item_page}, product: #{attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
+      UserMailer.send_email("Exception in item page: #{item_page}, product: #{attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'idanshviro@gmail.com').deliver
     end
 
     if !Product.in_stock?(Product.one_get_stock(item_page)) && !Product.one_get_stock(item_page).present?
@@ -16,7 +16,7 @@ class Product
     end
 
     if ebay_item[:ack] == 'Failure'
-      UserMailer.send_email("Exception in ebay call: #{ebay_item}, product: #{attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'roiekoper@gmail.com').deliver
+      UserMailer.send_email("Exception in ebay call: #{ebay_item}, product: #{attributes.slice(*%w[id ebay_item_id amazon_asin_number])}", 'Exception in compare ebay call', 'idanshviro@gmail.com').deliver
     else
       ebay_stock_change(ebay_item, notifications)
       if amazon_stock_change?(Product.one_get_stock(item_page), notifications)

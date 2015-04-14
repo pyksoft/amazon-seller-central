@@ -8,7 +8,7 @@ class DeleteEndingItems < ActiveRecord::Migration
       end
     end
 
-    %w(roiekoper@gmail.com).each do |to|
+    %w(idanshviro@gmail.com).each do |to|
       UserMailer.send_email(products_deleted.join('\n'),
                             "Deleted Products(#{products_deleted.size})",to).deliver
     end

@@ -1,5 +1,5 @@
 class UserMailer < ActionMailer::Base
-  default from: 'roiekoper@gmail.com'
+  default from: 'idanshviro@gmail.com'
 
   def send_email(content, title, to)
     mail(
