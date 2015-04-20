@@ -482,7 +482,7 @@ class Product < ActiveRecord::Base
     page = agent.get(url)
     form = page.forms.first
     form['email'] = 'shviro123456@gmail.com'
-    form['password'] = 'IDSH987'
+    form['password'] = 'IDANshviro09514391'
     form['ap_signin_existing_radio'] = '1'
     page = form.submit
 
