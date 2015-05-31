@@ -90,7 +90,8 @@ class Product < ActiveRecord::Base
 
     seconds = Benchmark.realtime do
       transaction do
-        notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
+        # notifications, extra_content = (compare_count % 2).zero? ? compare_each_product : compare_wish_list
+        notifications, extra_content = compare_wish_list
       end
 
       UserMailer.send_email('',

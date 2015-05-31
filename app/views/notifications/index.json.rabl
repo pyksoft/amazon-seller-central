@@ -12,5 +12,5 @@ node(:progress_count){
 }
 
 node(:compare_title){
-    ((List.compare_count % 2).zero? ? 'Prime' : 'Wishlist') + ' Compare'
+    'Wishlist Compare'
 }

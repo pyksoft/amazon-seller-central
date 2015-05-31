@@ -58,7 +58,8 @@ class Notification < ActiveRecord::Base
           )
         end,
         :progress_count => get_progress_count,
-        :compare_title => ((List.compare_count % 2).zero? ? 'Prime' : 'Wishlist') + ' Compare'
+        :compare_title => 'Wishlist Compare'
+        # :compare_title => ((List.compare_count % 2).zero? ? 'Prime' : 'Wishlist') + ' Compare'
     }
   end
 end
