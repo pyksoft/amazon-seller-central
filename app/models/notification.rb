@@ -42,6 +42,7 @@ class Notification < ActiveRecord::Base
     end
   end
 
+
   def self.notifications_json
     notifications = sorted_notifications
     notifications = create(:text => 'Empty Notification') if notifications.empty?
