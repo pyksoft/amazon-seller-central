@@ -62,7 +62,7 @@ class ProductsController < ApplicationController
       format.html
       format.json do
         flash_message = Product.import params[:file].tempfile.to_path.to_s,
-                       File.extname(params[:file].original_filename)
+                                       File.extname(params[:file].original_filename)
         redirect_to '/import_products', :notice => t(flash_message)
       end
     end

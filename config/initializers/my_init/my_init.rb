@@ -35,8 +35,21 @@ class ActiveRecord::Base
 end
 
 class String
+  def between_two_words(word1, word2, result=[])
+    finding = self[/#{word1}(.*?)#{word2}/, 1]
+    if finding
+      result << finding
+      self[/#{word2}.*/][word2.size..-1].between_two_words(word1,word2,result)
+    end
+    result
+  end
+
   def string_between_markers(marker1, marker2)
     self[/#{Regexp.escape(marker1)}(.*?)#{Regexp.escape(marker2)}/m, 1]
+  end
+
+  def to_cm
+    "#{(self.to_i * 2.54 / 100.0).round(2)} cm"
   end
 end
 
