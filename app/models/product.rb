@@ -86,7 +86,7 @@ class Product < ActiveRecord::Base
     set_products_count
     p "*** #{compare_count} ***"
 
-    reset_notifications_log unless get_notifications_log # set empty string to notifications log if not exists
+    reset_notifications_log unless get_notifications_log.present? # set empty string to notifications log if not exists
 
     seconds = Benchmark.realtime do
       transaction do
@@ -96,26 +96,22 @@ class Product < ActiveRecord::Base
 
       UserMailer.send_email('',
                             'Finished Transaction',
-                            'idanshviro@gmail.com').deliver
+                            MAILS_TO).deliver
     end
 
-    emails_to = ['idanshviro@gmail.com']
-
-    emails_to.each do |to|
-      UserMailer.send_email("--- #{extra_content} \n ---, Checking no': #{compare_count}",
-                            I18n.t('notifications.compare_complete',
-                                   :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
-                                   :new_notifications_count => notifications.size,
-                                   :work_time => "#{Time.at(seconds).gmtime.strftime('%R:%S')}"),
-                            to).deliver
-    end
+    UserMailer.send_email("--- #{extra_content} \n ---, Checking no': #{compare_count}",
+                          I18n.t('notifications.compare_complete',
+                                 :compare_time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :long),
+                                 :new_notifications_count => notifications.size,
+                                 :work_time => "#{Time.at(seconds).gmtime.strftime('%R:%S')}"),
+                          MAILS_TO).deliver
 
 
     reset_progress_count
 
     UserMailer.send_email('Compare Result',
                           "sec: #{seconds}, Notification size:#{notifications.size},extra: #{extra_content}",
-                          'idanshviro@gmail.com').deliver
+                          MAILS_TO).deliver
 
     List.update_compare_count unless get_notifications_log.present? && (compare_count % 2).zero?
     @@thread_compare_working = false
@@ -127,7 +123,7 @@ class Product < ActiveRecord::Base
 
     UserMailer.send_email('',
                           "Notification unseen size: #{Notification.where(:seen => nil).count}, Notification size: #{Notification.count}",
-                          'idanshviro@gmail.com').deliver
+                          MAILS_TO).deliver
   end
 
   def create_with_requests
@@ -193,12 +189,11 @@ class Product < ActiveRecord::Base
     all_assins = []
 
     wishlists_url = find_all_wishlists(agent)
-    p wishlists_url
     wishlists = wishlists_url.map { |url| agent.get "#{url}?page=#{page}" }
     # calc the products count to progress bar percent
     products_count = wishlists.map do |wishlist|
-      last_page = YAML.load((wishlist.search('.a-').last && wishlist.search('.a-').last.attributes['data-pag-trigger'].value).to_s)
-      (last_page && last_page['page'] || 0) * 25
+      last_page = YAML.load((wishlist.search('#wishlistPagination').present? && wishlist.search('#wishlistPagination').search('li')[-2].attributes['data-pag-trigger'].value.match('\d+')).to_s)
+      (last_page || 1) * 25
     end.sum
 
     set_products_count products_count
@@ -261,10 +256,10 @@ class Product < ActiveRecord::Base
       end
 
     rescue Errno::ETIMEDOUT
-      UserMailer.send_email("Product_id: #{product.try(:id)}, Page: #{page}", 'The compare wishlist broke down', 'idanshviro@gmail.com').deliver
+      UserMailer.send_email("Product_id: #{product.try(:id)}, Page: #{page}", 'The compare wishlist broke down', MAILS_TO).deliver
       compare_wish_list
     rescue Exception => e
-      UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.try(:id)}, Page: #{page}", 'Exception in compare wishlist', 'idanshviro@gmail.com').deliver
+      UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.try(:id)}, Page: #{page}, exception line: #{e.backtrace}", 'Exception in compare wishlist', MAILS_TO).deliver
       write_errors I18n.t('errors.diff_error',
                           :time => I18n.l(DateTime.now.in_time_zone('Jerusalem'), :format => :error),
                           :id => product.try(:id),
@@ -288,7 +283,7 @@ class Product < ActiveRecord::Base
     if reviewed_products.present?
       count = get_products_compared_ids.count
       notifications = reviewed_products
-      UserMailer.send_email("Reviewed Products Count:#{count}, Notifications size: #{notifications.size}", 'The prime compare was stuck', 'idanshviro@gmail.com').deliver
+      UserMailer.send_email("Reviewed Products Count:#{count}, Notifications size: #{notifications.size}", 'The prime compare was stuck', MAILS_TO).deliver
     else
       reset_products_compared_ids
     end
@@ -303,7 +298,7 @@ class Product < ActiveRecord::Base
         # delay between each 100 products of 10 seconds
         sleep(10) if (count % 100).zero?
       rescue Exception => e
-        UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.id}", 'Exception in prime compare', 'idanshviro@gmail.com').deliver
+        UserMailer.send_email("Exception errors:#{e.message}, product_id: #{product.id}", 'Exception in prime compare', MAILS_TO).deliver
 
         notifications << {
             :text => I18n.t('notifications.unknown_item', :title => product.title),
@@ -324,11 +319,11 @@ class Product < ActiveRecord::Base
 
     end
 
-    UserMailer.send_html_email(pages.map { |p| p[:page] }.join(','), pages.map { |p| p[:product] }.join(','), 'idanshviro@gmail.com').deliver
+    UserMailer.send_html_email(pages.map { |p| p[:page] }.join(','), pages.map { |p| p[:product] }.join(','), MAILS_TO).deliver
     reset_notifications_log
 
     extra_content = "Over on #{count} products / #{Product.count}"
-    UserMailer.send_email("[#{notifications.join(',')}]", 'End Compare Each Product', 'idanshviro@gmail.com').deliver
+    UserMailer.send_email("[#{notifications.join(',')}]", 'End Compare Each Product', MAILS_TO).deliver
 
     [notifications, extra_content]
   end
@@ -369,7 +364,7 @@ class Product < ActiveRecord::Base
       begin
         ebay_item[:item][:listing_details][:converted_start_price]
       rescue Exception => e
-        UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}", 'Exception in compare wishlist', 'idanshviro@gmail.com').deliver
+        UserMailer.send_email("Exception price change?:#{e.message}, #{ebay_item}, new price: #{new_price}, exception line: #{e.backtrace}", 'Exception in compare wishlist', MAILS_TO).deliver
       end
 
       # auto price update for §products change price under 3$.
@@ -537,7 +532,11 @@ class Product < ActiveRecord::Base
   def self.one_get_stock(item_page)
     item_page.search('#availability_feature_div').present? &&
         item_page.search('#availability_feature_div').search('#availability').present? &&
+        item_page.search('#availability_feature_div').search('#availability').first.children[1].present? &&
         item_page.search('#availability_feature_div').search('#availability').first.children[1].children.first.text.strip ||
+        (item_page.search('#availability_feature_div').search('#availability').present? &&
+            item_page.search('#availability_feature_div').search('#availability').first.children.present? &&
+            item_page.search('#availability_feature_div').search('#availability').first.children.first.text.strip) ||
         item_page.search('.buying') &&
             item_page.search('.buying').search('span').to_s ||
         ''
@@ -585,7 +584,7 @@ class Product < ActiveRecord::Base
   def self.import(path_name, file_extension)
     formats = %w[.xls .xlsx]
     if formats.include? file_extension
-      ExcelParser.cols_to_hash(path_name, EXCEL_ATTRS, { :extension => file_extension }).each do |attrs|
+      ExcelParser.cols_to_hash(path_name, EXCEL_ATTRS, { :extension => file_extension }).each_with_index do |attrs, i|
         new(attrs).save(:validate => false)
       end
       'messages.excel_uploaded'
@@ -599,14 +598,13 @@ class Product < ActiveRecord::Base
         search('#left-nav').search('a')
     if wishlists.present?
       last_wishlist_index = wishlists.to_a.index do |wishlist|
-        wishlist.children.children.text.include?('Manage your lists')
+        wishlist.children.text.include?('Manage your lists')
       end.to_i - 1
-      wishlists[2..last_wishlist_index].map do |wishlist|
+      wishlists[0..last_wishlist_index].map do |wishlist|
         "http://www.amazon.com#{wishlist.attributes['href'].value}"
       end
     else
       []
     end
   end
-
 end

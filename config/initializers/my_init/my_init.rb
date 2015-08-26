@@ -1,6 +1,9 @@
 AWS_ACCESS_KEY_ID ='AKIAJWUX7FTA4K5RSLRQ'
 AWS_SECRET_ACCESS_KEY = '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'
 
+
+MAILS_TO = Rails.env.development? ? 'roiekoper@gmail.com' : 'idanshviro@gmail.com'
+
 Amazon::Ecs.options = {
     :associate_tag => 'tag',
     :AWS_access_key_id => AWS_ACCESS_KEY_ID,
@@ -39,7 +42,7 @@ class String
     finding = self[/#{word1}(.*?)#{word2}/, 1]
     if finding
       result << finding
-      self[/#{word2}.*/][word2.size..-1].between_two_words(word1,word2,result)
+      self[/#{word2}.*/][word2.size..-1].between_two_words(word1, word2, result)
     end
     result
   end

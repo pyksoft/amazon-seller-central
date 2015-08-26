@@ -44,7 +44,7 @@ Rails.application.configure do
       domain: 'localhost:3000',
       authentication: 'plain',
       enable_starttls_auto: true,
-      user_name: '', # TODO: Need enter user_name & password of smtp mail like gmail username.
-      password: ''
+      user_name: 'shviroapp@gmail.com',
+      password: '09514391'
   }
 end

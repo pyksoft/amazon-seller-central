@@ -37,6 +37,12 @@ gem 'axlsx'
 gem 'google_drive'
 gem 'roo'
 
+group :development do
+  gem 'better_errors'
+  gem 'quiet_assets'
+  gem 'binding_of_caller'
+end
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 

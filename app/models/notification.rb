@@ -45,12 +45,13 @@ class Notification < ActiveRecord::Base
 
   def self.notifications_json
     notifications = sorted_notifications
-    notifications = create(:text => 'Empty Notification') if notifications.empty?
+    notifications = [new(:title => 'Empty Notifications')] if notifications.empty?
 
     {
         :notifications => notifications.inject([]) do |arr, notification|
           arr << notification.values_at(%i[id text image_url row_css change_title skip_accepted]).merge(
               :product => {
+                  :id => notification.product.try(:id),
                   :title => notification.title || notification.product.try(:title),
                   :ebay_item_id => notification.ebay_item_id || notification.product.try(:ebay_item_id),
                   :amazon_asin_number => notification.amazon_asin_number || notification.product.try(:amazon_asin_number),
